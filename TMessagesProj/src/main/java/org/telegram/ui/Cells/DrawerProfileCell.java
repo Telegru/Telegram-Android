@@ -71,23 +71,26 @@ import org.telegram.ui.ThemeActivity;
 
 import java.util.ArrayList;
 
+import ru.dahl.messenger.settings.DahlSettings;
+
 public class DrawerProfileCell extends FrameLayout implements NotificationCenter.NotificationCenterDelegate {
 
-    private BackupImageView avatarImageView;
-    private SimpleTextView nameTextView;
-    private TextView phoneTextView;
-    private ImageView shadowView;
-    private ImageView arrowView;
-    private RLottieImageView darkThemeView;
+    private final BackupImageView avatarImageView;
+    private final SimpleTextView nameTextView;
+    private final TextView phoneTextView;
+    private final ImageView shadowView;
+    private final ImageView arrowView;
+    private final RLottieImageView darkThemeView;
     private static RLottieDrawable sunDrawable;
     private boolean updateRightDrawable = true;
-    private AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable status;
-    private AnimatedStatusView animatedStatus;
+    private Long statusGiftId;
+    private final AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable status;
+    private final AnimatedStatusView animatedStatus;
 
-    private Rect srcRect = new Rect();
-    private Rect destRect = new Rect();
-    private Paint paint = new Paint();
-    private Paint backPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Rect srcRect = new Rect();
+    private final Rect destRect = new Rect();
+    private final Paint paint = new Paint();
+    private final Paint backPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private Integer currentColor;
     private Integer currentMoonColor;
     private SnowflakesEffect snowflakesEffect;
@@ -112,7 +115,7 @@ public class DrawerProfileCell extends FrameLayout implements NotificationCenter
         addView(shadowView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 70, Gravity.LEFT | Gravity.BOTTOM));
 
         avatarImageView = new BackupImageView(context);
-        avatarImageView.getImageReceiver().setRoundRadius(AndroidUtilities.dp(32));
+        avatarImageView.getImageReceiver().setRoundRadius(DahlSettings.getRectangularAvatars() ? DahlSettings.getAvatarCornerRadius() : AndroidUtilities.dp(32));
         addView(avatarImageView, LayoutHelper.createFrame(64, 64, Gravity.LEFT | Gravity.BOTTOM, 16, 0, 0, 67));
 
         nameTextView = new SimpleTextView(context) {
@@ -232,20 +235,20 @@ public class DrawerProfileCell extends FrameLayout implements NotificationCenter
             }
             switchingTheme = true;
             SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("themeconfig", Activity.MODE_PRIVATE);
-            String dayThemeName = preferences.getString("lastDayTheme", "Blue");
+            String dayThemeName = preferences.getString("lastDayTheme", "Day");
             if (Theme.getTheme(dayThemeName) == null || Theme.getTheme(dayThemeName).isDark()) {
-                dayThemeName = "Blue";
+                dayThemeName = "Day";
             }
-            String nightThemeName = preferences.getString("lastDarkTheme", "Dark Blue");
+            String nightThemeName = preferences.getString("lastDarkTheme", "Night");
             if (Theme.getTheme(nightThemeName) == null || !Theme.getTheme(nightThemeName).isDark()) {
-                nightThemeName = "Dark Blue";
+                nightThemeName = "Night";
             }
             Theme.ThemeInfo themeInfo = Theme.getActiveTheme();
             if (dayThemeName.equals(nightThemeName)) {
                 if (themeInfo.isDark() || dayThemeName.equals("Dark Blue") || dayThemeName.equals("Night")) {
-                    dayThemeName = "Blue";
+                    dayThemeName = "Day";
                 } else {
-                    nightThemeName = "Dark Blue";
+                    nightThemeName = "Night";
                 }
             }
 
@@ -293,12 +296,12 @@ public class DrawerProfileCell extends FrameLayout implements NotificationCenter
     }
 
     public static class AnimatedStatusView extends View {
-        private int stateSize;
-        private int effectsSize;
-        private int renderedEffectsSize;
+        private final int stateSize;
+        private final int effectsSize;
+        private final int renderedEffectsSize;
 
         private int animationUniq;
-        private ArrayList<Object> animations = new ArrayList<>();
+        private final ArrayList<Object> animations = new ArrayList<>();
         public AnimatedStatusView(Context context, int stateSize, int effectsSize) {
             super(context);
             this.stateSize = stateSize;
@@ -685,17 +688,24 @@ public class DrawerProfileCell extends FrameLayout implements NotificationCenter
         setArrowState(false);
         CharSequence text = UserObject.getUserName(user);
         try {
-            text = Emoji.replaceEmoji(text, nameTextView.getPaint().getFontMetricsInt(), AndroidUtilities.dp(22), false);
+            text = Emoji.replaceEmoji(text, nameTextView.getPaint().getFontMetricsInt(), false);
         } catch (Exception ignore) {}
 
         drawPremium = false;//user.premium;
         nameTextView.setText(text);
-        Long emojiStatusId = UserObject.getEmojiStatusDocumentId(user);
+        statusGiftId = null;
+        boolean showEmojiStatus = DahlSettings.isEmojiStatus();
+        Long emojiStatusId = showEmojiStatus ? UserObject.getEmojiStatusDocumentId(user) : null;
         if (emojiStatusId != null) {
+            final boolean isCollectible = user.emoji_status instanceof TLRPC.TL_emojiStatusCollectible;
             animatedStatus.animate().alpha(1).setDuration(200).start();
             nameTextView.setDrawablePadding(AndroidUtilities.dp(4));
             status.set(emojiStatusId, true);
-        } else if (user.premium) {
+            if (isCollectible) {
+                statusGiftId = ((TLRPC.TL_emojiStatusCollectible) user.emoji_status).collectible_id;
+            }
+            status.setParticles(isCollectible, true);
+        } else if (showEmojiStatus && user.premium) {
             animatedStatus.animate().alpha(1).setDuration(200).start();
             nameTextView.setDrawablePadding(AndroidUtilities.dp(4));
             if (premiumStar == null) {
@@ -703,10 +713,12 @@ public class DrawerProfileCell extends FrameLayout implements NotificationCenter
             }
             premiumStar.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_chats_menuPhoneCats), PorterDuff.Mode.MULTIPLY));
             status.set(premiumStar, true);
+            status.setParticles(false, true);
         } else {
             animatedStatus.animateChange(null);
             animatedStatus.animate().alpha(0).setDuration(200).start();
             status.set((Drawable) null, true);
+            status.setParticles(false, true);
         }
         animatedStatus.setColor(Theme.getColor(Theme.isCurrentThemeDark() ? Theme.key_chats_verifiedBackground : Theme.key_chats_menuPhoneCats));
         status.setColor(Theme.getColor(Theme.isCurrentThemeDark() ? Theme.key_chats_verifiedBackground : Theme.key_chats_menuPhoneCats));
@@ -771,6 +783,10 @@ public class DrawerProfileCell extends FrameLayout implements NotificationCenter
 
     public AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable getEmojiStatusDrawable() {
         return status;
+    }
+
+    public Long getEmojiStatusGiftId() {
+        return statusGiftId;
     }
 
     public View getEmojiStatusDrawableParent() {

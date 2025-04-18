@@ -2,6 +2,7 @@ package org.telegram.ui.Components;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.view.View;
@@ -67,11 +68,12 @@ public class BottomPagesView extends View {
             rect.set(x, 0, x + AndroidUtilities.dp(5), AndroidUtilities.dp(5));
             canvas.drawRoundRect(rect, AndroidUtilities.dp(2.5f), AndroidUtilities.dp(2.5f), paint);
         }
-        if (selectedColorKey >= 0) {
-            paint.setColor(Theme.getColor(selectedColorKey));
-        } else {
-            paint.setColor(0xff2ca5e0);
-        }
+//        if (selectedColorKey >= 0) {
+//            paint.setColor(Theme.getColor(selectedColorKey));
+//        } else {
+//            paint.setColor(0xff2ca5e0);
+//        }
+        paint.setColor(Color.WHITE);
         x = currentPage * AndroidUtilities.dp(11);
         if (progress != 0) {
             if (scrollPosition >= currentPage) {

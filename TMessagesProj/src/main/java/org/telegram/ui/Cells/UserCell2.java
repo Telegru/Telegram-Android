@@ -36,6 +36,8 @@ import org.telegram.ui.Components.CheckBox;
 import org.telegram.ui.Components.CheckBoxSquare;
 import org.telegram.ui.Components.LayoutHelper;
 
+import ru.dahl.messenger.settings.DahlSettings;
+
 public class UserCell2 extends FrameLayout {
 
     private Theme.ResourcesProvider resourcesProvider;
@@ -77,13 +79,13 @@ public class UserCell2 extends FrameLayout {
         avatarDrawable = new AvatarDrawable();
 
         avatarImageView = new BackupImageView(context);
-        avatarImageView.setRoundRadius(AndroidUtilities.dp(24));
+        avatarImageView.setRoundRadius(DahlSettings.INSTANCE.getAvatarCornerRadius());
         addView(avatarImageView, LayoutHelper.createFrame(48, 48, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, LocaleController.isRTL ? 0 : 7 + padding, 11, LocaleController.isRTL ? 7 + padding : 0, 0));
 
         nameTextView = new SimpleTextView(context) {
             @Override
             public boolean setText(CharSequence value) {
-                value = Emoji.replaceEmoji(value, getPaint().getFontMetricsInt(), AndroidUtilities.dp(15), false);
+                value = Emoji.replaceEmoji(value, getPaint().getFontMetricsInt(), false);
                 return super.setText(value);
             }
         };

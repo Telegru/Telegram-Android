@@ -16,9 +16,12 @@ import androidx.annotation.Nullable;
 
 import org.telegram.messenger.ImageReceiver;
 import org.telegram.messenger.MessagesController;
+import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.AvatarDrawable;
+
+import ru.dahl.messenger.settings.DahlSettings;
 
 public class AvatarSpan extends ReplacementSpan {
 
@@ -48,7 +51,11 @@ public class AvatarSpan extends ReplacementSpan {
     }
 
     public void setSize(float sz) {
-        imageReceiver.setRoundRadius(dp(sz));
+        if (DahlSettings.getRectangularAvatars()) {
+            imageReceiver.setRoundRadius(DahlSettings.INSTANCE.getAvatarCornerRadius());
+        } else {
+            imageReceiver.setRoundRadius(dp(sz));
+        }
         this.sz = sz;
     }
 
@@ -107,6 +114,11 @@ public class AvatarSpan extends ReplacementSpan {
     public void setUser(TLRPC.User user) {
         avatarDrawable.setInfo(currentAccount, user);
         imageReceiver.setForUserOrChat(user, avatarDrawable);
+    }
+
+    public void setObject(TLObject obj) {
+        avatarDrawable.setInfo(currentAccount, obj);
+        imageReceiver.setForUserOrChat(obj, avatarDrawable);
     }
 
     public void setName(String name) {

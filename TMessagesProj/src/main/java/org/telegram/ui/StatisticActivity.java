@@ -491,6 +491,7 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
                 }
             }
         } else if (id == NotificationCenter.boostByChannelCreated) {
+            if (getParentLayout() == null) return;
             TLRPC.Chat chat = (TLRPC.Chat) args[0];
             boolean isGiveaway = (boolean) args[1];
             List<BaseFragment> fragmentStack = getParentLayout().getFragmentStack();
@@ -574,7 +575,7 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
         TLRPC.ChatFull chatFull = MessagesController.getInstance(currentAccount).getChatFull(chatId);
         final boolean hasStats = chatFull != null && chatFull.can_view_stats;
         boolean isBoostSupported = ChatObject.isBoostSupported(currentChat);
-        final boolean hasMonetization = ChatObject.isChannelAndNotMegaGroup(currentChat) && chatFull != null && (chatFull.can_view_revenue || chatFull.can_view_stars_revenue);
+        final boolean hasMonetization = chatFull != null && (chatFull.can_view_revenue || chatFull.can_view_stars_revenue);
         BottomPagerTabs storiesTabsView = new BottomPagerTabs(context, getResourceProvider()) {
             @Override
             public Tab[] createTabs() {
@@ -613,7 +614,7 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
             boostLayout = new ChannelBoostLayout(StatisticActivity.this, -chatId, getResourceProvider());
         }
         if (hasMonetization) {
-            monetizationLayout = new ChannelMonetizationLayout(getContext(), StatisticActivity.this, currentAccount, -chatId, getResourceProvider(), chatFull.can_view_revenue, chatFull.can_view_stars_revenue);
+            monetizationLayout = new ChannelMonetizationLayout(getContext(), StatisticActivity.this, currentAccount, -chatId, getResourceProvider(), ChatObject.isChannelAndNotMegaGroup(currentChat) && chatFull.can_view_revenue, chatFull.can_view_stars_revenue);
             monetizationLayout.setActionBar(actionBar);
         }
         viewPagerFixed.setAdapter(new ViewPagerFixed.Adapter() {
@@ -2208,11 +2209,11 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
         final int graphType;
         final String title;
 
-        boolean loading;
-        boolean isEmpty;
-        boolean isLanguages;
-        boolean useHourFormat;
-        boolean useWeekFormat;
+        public boolean loading;
+        public boolean isEmpty;
+        public boolean isLanguages;
+        public boolean useHourFormat;
+        public boolean useWeekFormat;
 
         public ChartViewData(String title, int grahType) {
             this.title = title;

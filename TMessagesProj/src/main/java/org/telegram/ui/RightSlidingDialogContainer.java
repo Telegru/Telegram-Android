@@ -31,6 +31,8 @@ import org.telegram.ui.ActionBar.INavigationLayout;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 
+import ru.dahl.messenger.settings.DahlSettings;
+
 public abstract class RightSlidingDialogContainer extends FrameLayout {
 
     BaseFragment currentFragment;
@@ -465,7 +467,14 @@ public abstract class RightSlidingDialogContainer extends FrameLayout {
     }
 
     public static int getRightPaddingSize() {
-        return SharedConfig.useThreeLinesLayout ? 74 : 76;
+        switch (DahlSettings.getChatListLines()) {
+            case 1:
+                return 60;
+            case 3:
+                return 74;
+            default:
+                return 76;
+        }
     }
 
     public View getFragmentView() {

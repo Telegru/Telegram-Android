@@ -7,8 +7,9 @@ import android.graphics.RectF;
 import android.view.View;
 
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.SharedConfig;
 import org.telegram.ui.ActionBar.Theme;
+
+import ru.dahl.messenger.utils.DahlUtils;
 
 public class PacmanAnimation {
 
@@ -125,7 +126,7 @@ public class PacmanAnimation {
 
     public void draw(Canvas canvas, int cy) {
         int size = AndroidUtilities.dp(110);
-        int height = AndroidUtilities.dp(SharedConfig.useThreeLinesLayout ? 78 : 72);
+        int height = DahlUtils.getChatCellHeight();
         int additionalSize = size + AndroidUtilities.dp(42 + 20) * 3;
         int width = parentView.getMeasuredWidth() + additionalSize;
         float translation = width * translationProgress - additionalSize;

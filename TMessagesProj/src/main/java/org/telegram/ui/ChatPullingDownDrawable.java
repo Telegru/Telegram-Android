@@ -1,5 +1,7 @@
 package org.telegram.ui;
 
+import static org.telegram.messenger.AndroidUtilities.dp;
+
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
@@ -44,6 +46,8 @@ import org.telegram.ui.Components.StaticLayoutEx;
 
 import java.util.ArrayList;
 
+import ru.dahl.messenger.settings.DahlSettings;
+
 public class ChatPullingDownDrawable implements NotificationCenter.NotificationCenterDelegate {
 
     public int dialogFolderId;
@@ -54,7 +58,7 @@ public class ChatPullingDownDrawable implements NotificationCenter.NotificationC
     Paint arrowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     TextPaint textPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
     TextPaint textPaint2 = new TextPaint(Paint.ANTI_ALIAS_FLAG);
-    private Paint xRefPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint xRefPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     Path path = new Path();
 
     StaticLayout chatNameLayout;
@@ -94,7 +98,7 @@ public class ChatPullingDownDrawable implements NotificationCenter.NotificationC
 
     private boolean visibleCounterDrawable = true;
     CounterView.CounterDrawable counterDrawable = new CounterView.CounterDrawable(null, true, null);
-    int params[] = new int[3];
+    int[] params = new int[3];
     private final int currentAccount;
     private final int folderId;
     private final int filterId;
@@ -284,7 +288,8 @@ public class ChatPullingDownDrawable implements NotificationCenter.NotificationC
             float cx = lastWidth / 2f;
             float cy = AndroidUtilities.dp(12) + circleRadius;
             imageReceiver.setImageCoords(cx - AndroidUtilities.dp(40) / 2f, cy - AndroidUtilities.dp(40) / 2f, AndroidUtilities.dp(40), AndroidUtilities.dp(40));
-            imageReceiver.setRoundRadius((int) (AndroidUtilities.dp(40) / 2f));
+            float radius = (DahlSettings.getRectangularAvatars()) ? DahlSettings.getAvatarCornerRadius() : dp(40) / 2f;
+            imageReceiver.setRoundRadius((int) radius);
 
             counterDrawable.setSize(AndroidUtilities.dp(28), AndroidUtilities.dp(100));
             if (isTopic) {
@@ -328,7 +333,9 @@ public class ChatPullingDownDrawable implements NotificationCenter.NotificationC
         if ((progress >= 1f && lastProgress < 1f) || (progress < 1f && lastProgress == 1f)) {
             long time = System.currentTimeMillis();
             if (time - lastHapticTime > 100) {
-                parent.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                try {
+                    parent.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                } catch (Exception ignored) {}
                 lastHapticTime = time;
             }
             lastProgress = progress;
@@ -725,6 +732,7 @@ public class ChatPullingDownDrawable implements NotificationCenter.NotificationC
     }
 
     public long getChatId() {
+        if (nextChat == null) return 0;
         return nextChat.id;
     }
 

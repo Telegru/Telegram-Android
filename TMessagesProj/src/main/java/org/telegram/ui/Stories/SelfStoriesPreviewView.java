@@ -31,6 +31,8 @@ import org.telegram.ui.Components.StaticLayoutEx;
 
 import java.util.ArrayList;
 
+import ru.dahl.messenger.settings.DahlSettings;
+
 public abstract class SelfStoriesPreviewView extends View {
 
     public int imagesFromY;
@@ -410,7 +412,7 @@ public abstract class SelfStoriesPreviewView extends View {
 
         public ImageHolder() {
             receiver.setAllowLoadingOnAttachedOnly(true);
-            receiver.setRoundRadius(AndroidUtilities.dp(6));
+            receiver.setRoundRadius(DahlSettings.INSTANCE.getAvatarCornerRadius());
             paint.setColor(Color.WHITE);
             paint.setTextSize(AndroidUtilities.dp(13));
         }

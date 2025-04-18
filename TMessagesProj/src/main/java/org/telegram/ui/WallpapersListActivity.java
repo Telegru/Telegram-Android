@@ -60,6 +60,7 @@ import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.tgnet.tl.TL_account;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
 import org.telegram.ui.ActionBar.ActionBarMenuItem;
@@ -84,6 +85,10 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Objects;
+
+import ru.dahl.messenger.DahlWallpaper;
 
 public class WallpapersListActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate {
 
@@ -107,7 +112,7 @@ public class WallpapersListActivity extends BaseFragment implements Notification
 
     private ColorWallpaper addedColorWallpaper;
     private FileWallpaper addedFileWallpaper;
-    private ColorWallpaper catsWallpaper;
+//    private ColorWallpaper catsWallpaper;
     private FileWallpaper themeWallpaper;
 
     private RecyclerListView listView;
@@ -299,7 +304,8 @@ public class WallpapersListActivity extends BaseFragment implements Notification
         public boolean motion;
         public boolean isGradient;
         public TLRPC.WallPaper parentWallpaper;
-        public Bitmap defaultCache;
+//        public Bitmap defaultCache;
+        public final  boolean isDahlWallpaper;
 
         public String getHash() {
             String string = String.valueOf(color) +
@@ -318,6 +324,7 @@ public class WallpapersListActivity extends BaseFragment implements Notification
             gradientColor1 = gc == 0 ? 0 : gc | 0xff000000;
             gradientRotation = gradientColor1 != 0 ? r : 0;
             intensity = 1.0f;
+            isDahlWallpaper = false;
         }
 
         public ColorWallpaper(String s, int c, int gc1, int gc2, int gc3) {
@@ -328,6 +335,7 @@ public class WallpapersListActivity extends BaseFragment implements Notification
             gradientColor3 = gc3 == 0 ? 0 : gc3 | 0xff000000;
             intensity = 1.0f;
             isGradient = true;
+            isDahlWallpaper = false;
         }
 
         public ColorWallpaper(String s, int c) {
@@ -346,6 +354,7 @@ public class WallpapersListActivity extends BaseFragment implements Notification
             gradientColor3 = ColorPicker.generateGradientColors(gradientColor1);
             intensity = 1.0f;
             isGradient = true;
+            isDahlWallpaper = false;
         }
 
         public ColorWallpaper(String s, int c, int gc1, int gc2, int gc3, int r, float in, boolean m, File ph) {
@@ -358,6 +367,21 @@ public class WallpapersListActivity extends BaseFragment implements Notification
             intensity = in;
             path = ph;
             motion = m;
+            isDahlWallpaper = false;
+        }
+
+        public ColorWallpaper(DahlWallpaper dahlWallpaper, boolean isDarkTheme){
+            slug = dahlWallpaper.getSlug();
+            int[] colors = dahlWallpaper.getColors(isDarkTheme);
+            color = colors[0];
+            gradientColor1 = colors[1];
+            gradientColor2 = colors[2];
+            gradientColor3 = colors[3];
+            gradientRotation = 45;
+            intensity = isDarkTheme ? -0.57f : 1f;
+            path = new File(dahlWallpaper.getPath());
+            isDahlWallpaper = true;
+            pattern = dahlWallpaper.toPattern(isDarkTheme);
         }
 
         public String getUrl() {
@@ -547,7 +571,7 @@ public class WallpapersListActivity extends BaseFragment implements Notification
                             }
                             deleteCount[0]++;
                             TLRPC.WallPaper wallPaper = (TLRPC.WallPaper) object;
-                            TLRPC.TL_account_saveWallPaper req = new TLRPC.TL_account_saveWallPaper();
+                            TL_account.saveWallPaper req = new TL_account.saveWallPaper();
                             req.settings = new TLRPC.TL_wallPaperSettings();
                             req.unsave = true;
 
@@ -785,7 +809,7 @@ public class WallpapersListActivity extends BaseFragment implements Notification
                     progressDialog = new AlertDialog(getParentActivity(), AlertDialog.ALERT_TYPE_SPINNER);
                     progressDialog.setCanCancel(false);
                     progressDialog.show();
-                    TLRPC.TL_account_resetWallPapers req = new TLRPC.TL_account_resetWallPapers();
+                    TL_account.resetWallPapers req = new TL_account.resetWallPapers();
                     ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> loadWallpapers(false)));
                 });
                 builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
@@ -874,7 +898,7 @@ public class WallpapersListActivity extends BaseFragment implements Notification
                 selectedBackgroundMotion = overrideWallpaper.isMotion;
                 selectedBackgroundBlurred = overrideWallpaper.isBlurred;
             } else {
-                selectedBackgroundSlug = Theme.hasWallpaperFromTheme() ? Theme.THEME_BACKGROUND_SLUG : Theme.DEFAULT_BACKGROUND_SLUG;
+                selectedBackgroundSlug = Theme.hasWallpaperFromTheme() ? Theme.THEME_BACKGROUND_SLUG : DahlWallpaper.Russia.INSTANCE.getSlug();
                 selectedColor = 0;
                 selectedGradientColor1 = 0;
                 selectedGradientColor2 = 0;
@@ -978,6 +1002,15 @@ public class WallpapersListActivity extends BaseFragment implements Notification
                     colorWallpaper.parentWallpaper = wallPaper;
                     object = colorWallpaper;
                 }
+            }else if(object instanceof ColorWallpaper){
+                ColorWallpaper wallpaper = (ColorWallpaper) object;
+                if(wallpaper.slug.startsWith("custom_")){
+                    String s = wallpaper.slug.replace("custom_", "");
+                    DahlWallpaper dw = DahlWallpaper.Companion.getBySlug(s);
+                    if(dw != null){
+                        wallpaper.pattern = dw.toPattern(Theme.isCurrentThemeDark());
+                    }
+                }
             }
             ThemePreviewActivity wallpaperActivity = new ThemePreviewActivity(object, null, true, false) {
                 @Override
@@ -1050,6 +1083,9 @@ public class WallpapersListActivity extends BaseFragment implements Notification
                 allWallPapers.addAll(arrayList);
             }
             ArrayList<TLRPC.WallPaper> wallPapersToDelete = null;
+            for(DahlWallpaper dw : DahlWallpaper.Companion.getItems()){
+                allWallPapersDict.put(dw.getSlug(), dw.toPattern(Theme.isCurrentThemeDark()));
+            }
             for (int a = 0, N = arrayList.size(); a < N; a++) {
                 TLRPC.WallPaper wallPaper = arrayList.get(a);
                 if ("fqv01SQemVIBAAAApND8LDRUhRU".equals(wallPaper.slug)) {
@@ -1104,6 +1140,9 @@ public class WallpapersListActivity extends BaseFragment implements Notification
             if (dialogId == 0) {
                 selectedBackgroundSlug = Theme.getSelectedBackgroundSlug();
             }
+            if(Objects.equals(selectedBackgroundSlug, Theme.DEFAULT_BACKGROUND_SLUG)){
+                selectedBackgroundSlug = DahlWallpaper.Russia.INSTANCE.getSlug();
+            }
             fillWallpapersWithCustom();
             loadWallpapers(false);
         } else if (id == NotificationCenter.didSetNewWallpapper) {
@@ -1133,11 +1172,11 @@ public class WallpapersListActivity extends BaseFragment implements Notification
                 acc = MediaDataController.calcHash(acc, wallPaper.id);
             }
         }
-        TLRPC.TL_account_getWallPapers req = new TLRPC.TL_account_getWallPapers();
+        TL_account.getWallPapers req = new TL_account.getWallPapers();
         req.hash = acc;
         int reqId = ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-            if (response instanceof TLRPC.TL_account_wallPapers) {
-                TLRPC.TL_account_wallPapers res = (TLRPC.TL_account_wallPapers) response;
+            if (response instanceof TL_account.TL_wallPapers) {
+                TL_account.TL_wallPapers res = (TL_account.TL_wallPapers) response;
                 patterns.clear();
                 patternsDict.clear();
                 if (currentType != TYPE_COLOR && currentType != TYPE_CHANNEL_PATTERNS) {
@@ -1181,6 +1220,9 @@ public class WallpapersListActivity extends BaseFragment implements Notification
                         wallPapers.add(colorWallpaper);
                     }
                 }
+                for(DahlWallpaper dw : DahlWallpaper.Companion.getItems()){
+                    allWallPapersDict.put(dw.getSlug(), dw.toPattern(Theme.isCurrentThemeDark()));
+                }
                 fillWallpapersWithCustom();
                 getMessagesStorage().putWallpapers(res.wallpapers, 1);
             }
@@ -1198,7 +1240,6 @@ public class WallpapersListActivity extends BaseFragment implements Notification
         if (currentType != TYPE_ALL && currentType != TYPE_CHANNEL_PATTERNS) {
             return;
         }
-        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
         if (addedColorWallpaper != null) {
             wallPapers.remove(addedColorWallpaper);
             addedColorWallpaper = null;
@@ -1207,16 +1248,25 @@ public class WallpapersListActivity extends BaseFragment implements Notification
             wallPapers.remove(addedFileWallpaper);
             addedFileWallpaper = null;
         }
-        if (catsWallpaper == null) {
-            catsWallpaper = new ColorWallpaper(Theme.DEFAULT_BACKGROUND_SLUG, 0xffdbddbb, 0xff6ba587, 0xffd5d88d, 0xff88b884);
-            catsWallpaper.intensity = 0.34f;
-            //catsWallpaper.slug = "fqv01SQemVIBAAAApND8LDRUhRU";
-        } else {
-            wallPapers.remove(catsWallpaper);
-        }
+//        if (catsWallpaper == null) {
+//            catsWallpaper = new ColorWallpaper(Theme.DEFAULT_BACKGROUND_SLUG, 0xffdbddbb, 0xff6ba587, 0xffd5d88d, 0xff88b884);
+//            catsWallpaper.intensity = 0.34f;
+//            //catsWallpaper.slug = "fqv01SQemVIBAAAApND8LDRUhRU";
+//        } else {
+//            wallPapers.remove(catsWallpaper);
+//        }
         if (themeWallpaper != null) {
             wallPapers.remove(themeWallpaper);
         }
+
+        wallPapers.removeIf(o -> {
+            if(!(o instanceof ColorWallpaper)){
+               return false;
+            }
+            String slug = ((ColorWallpaper)o).slug;
+            return DahlWallpaper.Companion.getSlugs().contains(slug);
+        });
+
         Object object = null;
         for (int a = 0, N = wallPapers.size(); a < N; a++) {
             Object obj = wallPapers.get(a);
@@ -1337,6 +1387,7 @@ public class WallpapersListActivity extends BaseFragment implements Notification
         } catch (Exception e) {
             FileLog.e(e);
         }
+
         if (Theme.hasWallpaperFromTheme() && !Theme.isThemeWallpaperPublic()) {
             if (themeWallpaper == null) {
                 themeWallpaper = new FileWallpaper(Theme.THEME_BACKGROUND_SLUG, -2, -2);
@@ -1345,8 +1396,18 @@ public class WallpapersListActivity extends BaseFragment implements Notification
         } else {
             themeWallpaper = null;
         }
+
+        List<ColorWallpaper> dahlWallpapers = new ArrayList<>(DahlWallpaper.Companion.getItems().length);
+        for(DahlWallpaper dw: DahlWallpaper.Companion.getItems()){
+            ColorWallpaper cw = new ColorWallpaper(dw, Theme.isCurrentThemeDark());
+            dahlWallpapers.add(cw);
+            patterns.add(cw.pattern);
+            patternsDict.put(cw.pattern.document.id, cw.pattern);
+        }
+        wallPapers.addAll(0, dahlWallpapers);
+
         Theme.ThemeInfo themeInfo = Theme.getActiveTheme();
-        if (TextUtils.isEmpty(selectedBackgroundSlug) || !Theme.DEFAULT_BACKGROUND_SLUG.equals(selectedBackgroundSlug) && object == null) {
+        if (TextUtils.isEmpty(selectedBackgroundSlug) || !DahlWallpaper.Companion.getSlugs().contains(selectedBackgroundSlug) && object == null) {
             if (!Theme.COLOR_BACKGROUND_SLUG.equals(selectedBackgroundSlug) && selectedColor != 0) {
                 if (themeInfo.overrideWallpaper != null) {
                     addedColorWallpaper = new ColorWallpaper(selectedBackgroundSlug, selectedColor, selectedGradientColor1, selectedGradientColor2, selectedGradientColor3, selectedGradientRotation, selectedIntensity, selectedBackgroundMotion, new File(ApplicationLoader.getFilesDirFixed(), themeInfo.overrideWallpaper.fileName));
@@ -1376,11 +1437,11 @@ public class WallpapersListActivity extends BaseFragment implements Notification
             }
             wallPapers.add(0, addedColorWallpaper);
         }
-        if (Theme.DEFAULT_BACKGROUND_SLUG.equals(selectedBackgroundSlug) || wallPapers.isEmpty()) {
-            wallPapers.add(0, catsWallpaper);
-        } else {
-            wallPapers.add(1, catsWallpaper);
-        }
+//        if (Theme.DEFAULT_BACKGROUND_SLUG.equals(selectedBackgroundSlug) || wallPapers.isEmpty()) {
+//            wallPapers.add(0, catsWallpaper);
+//        } else {
+//            wallPapers.add(1, catsWallpaper);
+//        }
         updateRows();
     }
 
@@ -1944,7 +2005,7 @@ public class WallpapersListActivity extends BaseFragment implements Notification
                         } else {
                             if (object instanceof ColorWallpaper) {
                                 ColorWallpaper colorWallpaper = (ColorWallpaper) object;
-                                if (Theme.DEFAULT_BACKGROUND_SLUG.equals(colorWallpaper.slug) && selectedBackgroundSlug != null && selectedBackgroundSlug.equals(colorWallpaper.slug)) {
+                                if (DahlWallpaper.Russia.INSTANCE.getSlug().equals(colorWallpaper.slug) && selectedBackgroundSlug != null && selectedBackgroundSlug.equals(colorWallpaper.slug)) {
                                     selectedWallpaper = object;
                                 } else if (colorWallpaper.color != selectedColor || colorWallpaper.gradientColor1 != selectedGradientColor1 || colorWallpaper.gradientColor2 != selectedGradientColor2 || colorWallpaper.gradientColor3 != selectedGradientColor3 || selectedGradientColor1 != 0 && colorWallpaper.gradientRotation != selectedGradientRotation) {
                                     selectedWallpaper = null;

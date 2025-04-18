@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="DahlAppName">Dahl</string>
+    <string name="DahlAppNameBeta">Dahl Beta</string>
+    <string name="DahlVersion">Dahl Messenger for Android %1$s \n Based on Telegram %2$s</string>
+
+    <string name="Slide2Title">Communication</string>
+    <string name="Slide3Title">Simplicity and Convenience</string>
+    <string name="Slide4Title">Privacy</string>
+    <string name="Slide5Title">Speed</string>
+    <string name="Slide6Title">Collaboration</string>
+    <string name="Slide7Title">Creativity</string>
+
+    <string name="Slide1Message">A messenger **designed and tailored to the needs** of the Russian audience.</string>
+    <string name="Slide2Message">Start a conversation on one device and seamlessly continue it on another with **instant data sync**.</string>
+    <string name="Slide3Message">**We’ve simplified everything** so you can focus on what matters most—your conversations \n and ideas.</string>
+    <string name="Slide4Message">**Your data is yours and yours alone.** \n Dahl doesn’t use it for advertising or share it with third parties.</string>
+    <string name="Slide5Message">Fast message delivery, **even with a weak internet connection.**</string>
+    <string name="Slide6Message">**Create** groups, **organize** projects, \n and **share** ideas.</string>
+    <string name="Slide7Message">**Express yourself freely** with emojis, stickers, and GIFs.</string>
+    <string name="Slide8Message">**Read** with Dahl. **Write** with Dahl. \n **Stay connected** with Dahl.</string>
+
+    <string name="ThemeDahl">Dahl</string>
+    <string name="SettingsDahl">Dahl settings</string>
+    <string name="IconsVkUI">Use VK UI set</string>
+    <string name="RestartToast">Restart app to apply changes</string>
+    <string name="RectangularAvatars">Rectangular avatars</string>
+
+    <string name="ChatsSettings">Chats</string>
+    <string name="ChatsFolders">Folders</string>
+    <string name="FoldersAtBottom">Move to the bottom</string>
+    <string name="HideAllChatsFolder">Hide \"All Chats\" folder</string>
+    <string name="FoldersInfiniteScrolling">Scroll in a loop</string>
+    <string name="AllFolders">All folders</string>
+    <string name="HideFolders">Hide</string>
+
+    <string name="ImportantNotice">Important Notice</string>
+    <string name="ImportantMessage">This is a forked version and not the official Telegram app. By clicking \'Confirm\', you acknowledge and understand this. Soon, many interesting features will appear here that are not present in the official application.</string>
+    <string name="ShowAllFolders">Show all folders</string>
+    <string name="Categories">Categories</string>
+    <string name="Links">Links</string>
+    <string name="DahlSupportInfo">Please note that Dahl Support is done by volunteers. We try to respond as quickly as possible, but it may take a while.</string>
+    <string name="ConnectionType">Connection type</string>
+    <string name="ProxyDahl">Dahl Proxy</string>
+    <string name="ProxyDahlInfo">Turn on in case of connection failures.</string>
+    <string name="Profile">Profile</string>
+    <string name="HidePhoneNumber">Hide phone number</string>
+    <string name="HidePhoneNumberInfo">The number will only be hidden from the Settings menu.</string>
+    <string name="Privacy">Privacy</string>
+    <string name="MessagesStatus">Message read status</string>
+    <string name="MessagesStatusInfo">Your contact will not see that their message has been read.</string>
+    <string name="OfflineMode">\"Offline\" mode</string>
+    <string name="OfflineModeInfo">For others, you’ll always appear in offline mode.</string>
+    <string name="PremiumFeatures">Premium features</string>
+    <string name="PremiumFeaturesInfo">Customize Premium features for yourself.</string>
+    <string name="PremiumFeaturesEnableInfo">Enable only necessary Premium features.</string>
+    <string name="EnableInChatsAndChannels">Disable in chats and channels</string>
+    <string name="BottomPanelInChannels">Bottom panel in channels</string>
+    <string name="Wallpapers">Wallpapers</string>
+    <string name="PersonalColors">Personal colors</string>
+    <string name="TgSettingsMenu">Telegram settings menu</string>
+    <string name="HideHelpBlock">Hide "Help" block</string>
+    <string name="NavigationDrawer">Side menu</string>
+    <string name="NavigationDrawerItems">Side menu items</string>
+    <string name="ElementsRounding">Rounding of elements</string>
+    <string name="Squared">Squared</string>
+    <string name="AvatarsFont">Font in avatars</string>
+    <string name="Nizhegorodski">Nizhegorodski</string>
+    <string name="FontAuthor">Font\'s author: <![CDATA[<font color="%1$s"><b>Aleksandr Shimanov</b></font>]]></string>
+    <string name="Icons">Icons</string>
+    <string name="BlockPremium">Premium block</string>
+    <string name="HideFromSettings">Hide from settings</string>
+    <string name="HidePremiumInfo">The setup of Premium features will be hidden from the general \"Settings\" section.</string>
+    <string name="StatusIcons">Emoji statuses</string>
+    <string name="StatusIconsInfo">Disable to hide emoji statuses next to usernames</string>
+    <string name="AnimatedAvatars">Animated avatars</string>
+    <string name="CustomChannelsWallpapers">Custom wallpapers in channels</string>
+    <string name="AnimatedReactions">Animated reactions</string>
+    <string name="AnimatedPremiumStickers">Animated Premium stickers</string>
+    <string name="TouchPremiumStickers">Tapping on premium stickers</string>
+    <string name="Stories">Stories</string>
+    <string name="HideStories">Do not show in chats</string>
+    <string name="HideArchiveStories">Do not show in Archive</string>
+    <string name="HideAddStory">Hide create button</string>
+    <string name="HideViewedStories">Hide viewed stories</string>
+    <string name="NeedConfirm">Confirm</string>
+    <string name="ConfirmCalling">Calling</string>
+    <string name="ConfirmAudioMessage">Audio message sending</string>
+    <string name="ConfirmVideoMessageCamera">Camera in video messages</string>
+  
+    <string name="DahlProxyEnable">Enable Dahl proxy</string>
+    <string name="DahlProxyDisable">Disable Dahl proxy</string>
+    <string name="DahlUseYourProxySettings">Use your proxy</string>
+
+
+    <string name="AppIconBlack">Black</string>
+    <string name="AppIconMetallic">Metallic</string>
+    <string name="AppIconSilver">Silver</string>
+    <string name="AppIconInverted">Inverted</string>
+    <string name="AppIconWhite">White</string>
+    <string name="AppIconUnicorn">Unicorn</string>
+    <string name="AppIconOutline">Outline</string>
+    <string name="AppIconTitanium">Titanium</string>
+    <string name="AppIconSparkling">Sparkling</string>
+    <string name="AppIconRussia">Russia</string>
+    <string name="AppIconTriangle">Triangle</string>
+    <string name="AppIconTatarstan">Tatarstan</string>
+    <string name="AppIconBirch">Birch</string>
+    <string name="AppIconWinter">Winter</string>
+
+    <string name="Wallet">Wallet</string>
+    <string name="CustomWallpapers">Custom wallpapers</string>
+    <string name="ChatListSingleLine">Single line</string>
+    <string name="NavigationDrawerSettingsInfo">The \"Settings\" and \"Dahl settings\" items cannot be removed from the side menu.</string>
+
+    <string name="NavigationDrawerItems_zero">Settings, Dahl Settings</string>
+    <string name="NavigationDrawerItems_one">%1$d item, Settings, Dahl Settings</string>
+    <string name="NavigationDrawerItems_two">%1$d items, Settings, Dahl Settings</string>
+    <string name="NavigationDrawerItems_few">%1$d items, Settings, Dahl Settings</string>
+    <string name="NavigationDrawerItems_many">%1$d items, Settings, Dahl Settings</string>
+    <string name="NavigationDrawerItems_other">%1$d items, Settings, Dahl Settings</string>
+
+    <string name="CameraAsk">Ask before recording</string>
+    <string name="CameraFront">Front camera</string>
+    <string name="CameraRear">Rear camera</string>
+    <string name="Ask">Ask</string>
+    <string name="Front">Front</string>
+    <string name="Rear">Rear</string>
+    <string name="EmptyRecentChats">Recent chats will appear here</string>
+    <string name="DisableRecentChats">Disable panel</string>
+    <string name="ClearRecentChatsAlert">Are you sure you want to clear the recent chats history? The chats data will be saved.</string>
+
+    <string name="SendAudioMessage">Send audio message</string>
+    <string name="SendAudioMessageInfo">Are you sure you want to send this audio message?</string>
+
+    <string name="Keyboard">Keyboard</string>
+    <string name="HideOnScroll">Hide on scroll</string>
+    <string name="HideOnScrollInfo">Keyboard will hide while scrolling chat up</string>
+
+    <string name="CallConfirmationAlert">Are you sure you want to call <![CDATA[<font color="%1$s"><b>%2$s</b></font>]]>?</string>
+    <string name="reloadToApply">Reload to apply changes</string>
+</resources>

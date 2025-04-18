@@ -34,12 +34,23 @@ public class LauncherIconController {
     }
 
     public enum LauncherIcon {
-        DEFAULT("DefaultIcon", R.drawable.icon_background_sa, R.mipmap.icon_foreground_sa, R.string.AppIconDefault),
-        VINTAGE("VintageIcon", R.drawable.icon_6_background_sa, R.mipmap.icon_6_foreground_sa, R.string.AppIconVintage),
-        AQUA("AquaIcon", R.drawable.icon_4_background_sa, R.mipmap.icon_foreground_sa, R.string.AppIconAqua),
-        PREMIUM("PremiumIcon", R.drawable.icon_3_background_sa, R.mipmap.icon_3_foreground_sa, R.string.AppIconPremium, true),
-        TURBO("TurboIcon", R.drawable.icon_5_background_sa, R.mipmap.icon_5_foreground_sa, R.string.AppIconTurbo, true),
-        NOX("NoxIcon", R.mipmap.icon_2_background_sa, R.mipmap.icon_foreground_sa, R.string.AppIconNox, true);
+        DEFAULT("DefaultIcon", R.drawable.ic_launcher_background_dahl_main, R.mipmap.icon_foreground_dahl_sa, R.string.AppIconDefault),
+        VINTAGE("VintageIcon", R.drawable.icon_dahl_background_vintage, R.mipmap.icon_foreground_dahl_sa, R.string.AppIconVintage),
+        BLACK("BlackIcon", R.drawable.ic_launcher_background_dahl_black, R.mipmap.icon_foreground_dahl_sa, R.string.AppIconBlack),
+        METALLIC("MetallicIcon", R.drawable.ic_launcher_background_dahl_metallic, R.mipmap.icon_foreground_dahl_sa, R.string.AppIconMetallic),
+        SILVER("SilverIcon", R.drawable.ic_launcher_background_dahl_silver, R.mipmap.icon_foreground_dahl_sa, R.string.AppIconSilver),
+        INVERTED("InvertedIcon", R.drawable.icon_dahl_background_inverted, R.mipmap.icon_foreground_dahl_inverted_sa, R.string.AppIconInverted),
+        WHITE("WhiteIcon", R.drawable.icon_dahl_background_white, R.mipmap.icon_foreground_dahl_white_sa, R.string.AppIconWhite),
+        UNICORN("UnicornIcon", R.drawable.ic_launcher_background_dahl_unicorn, R.mipmap.icon_foreground_dahl_unicorn_sa, R.string.AppIconUnicorn),
+        NOX("NoxIcon", R.mipmap.ic_launcher_dahl_night_background, R.mipmap.icon_foreground_dahl_night_sa, R.string.AppIconNox),
+        OUTLINE("OutlineIcon", R.drawable.ic_launcher_background_dahl_black, R.mipmap.icon_foreground_dahl_outline_sa, R.string.AppIconOutline),
+        TITANIUM("TitaniumIcon", R.drawable.ic_launcher_background_dahl_titanium, R.mipmap.icon_foreground_dahl_sa, R.string.AppIconTitanium),
+        SPARKLING("SparklingIcon", R.mipmap.ic_launcher_background_dahl_sparkling, R.mipmap.icon_foreground_dahl_sparkling_sa, R.string.AppIconSparkling),
+        RUSSIA("RussiaIcon", R.drawable.ic_launcher_background_dahl_russia, R.mipmap.icon_foreground_dahl_sa, R.string.AppIconRussia),
+        TRIANGLE("TriangleIcon", R.drawable.icon_dahl_background_triangle, R.mipmap.icon_foreground_dahl_triangle_sa, R.string.AppIconTriangle),
+        TATARSTAN("TatarstanIcon", R.drawable.ic_launcher_background_dahl_tatarstan, R.mipmap.icon_foreground_dahl_sa, R.string.AppIconTatarstan),
+        BIRCH("BirchIcon", R.drawable.icon_dahl_background_inverted, R.mipmap.icon_foreground_dahl_birch_sa, R.string.AppIconBirch),
+        WINTER("WinterIcon", R.mipmap.ic_launcher_background_dahl_winter, R.mipmap.icon_foreground_dahl_winter_sa, R.string.AppIconWinter);
 
         public final String key;
         public final int background;

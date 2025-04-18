@@ -113,6 +113,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 
+import ru.dahl.messenger.settings.DahlSettings;
+import ru.dahl.messenger.ui.cells.DahlChatListCell;
+
 public class ThemeActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate {
 
     public final static int THEME_TYPE_BASIC = 0;
@@ -1015,20 +1018,20 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                     }
                 } else if (id == day_night_switch) {
                     SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("themeconfig", Activity.MODE_PRIVATE);
-                    String dayThemeName = preferences.getString("lastDayTheme", "Blue");
+                    String dayThemeName = preferences.getString("lastDayTheme", "Day");
                     if (Theme.getTheme(dayThemeName) == null || Theme.getTheme(dayThemeName).isDark()) {
-                        dayThemeName = "Blue";
+                        dayThemeName = "Day";
                     }
-                    String nightThemeName = preferences.getString("lastDarkTheme", "Dark Blue");
+                    String nightThemeName = preferences.getString("lastDarkTheme", "Night");
                     if (Theme.getTheme(nightThemeName) == null || !Theme.getTheme(nightThemeName).isDark()) {
-                        nightThemeName = "Dark Blue";
+                        nightThemeName = "Night";
                     }
                     Theme.ThemeInfo themeInfo = Theme.getActiveTheme();
                     if (dayThemeName.equals(nightThemeName)) {
                         if (themeInfo.isDark() || dayThemeName.equals("Dark Blue") || dayThemeName.equals("Night")) {
-                            dayThemeName = "Blue";
+                            dayThemeName = "Day";
                         } else {
-                            nightThemeName = "Dark Blue";
+                            nightThemeName = "Night";
                         }
                     }
 
@@ -1917,7 +1920,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
             int type = holder.getItemViewType();
             return type == 0 || type == TYPE_TEXT_SETTING || type == TYPE_THEME_TYPE || type == TYPE_TEXT_CHECK ||
                     type == TYPE_NIGHT_THEME || type == TYPE_THEME_LIST || type == TYPE_THEME_ACCENT_LIST ||
-                    type == TYPE_TEXT_PREFERENCE || type == 18 || type == TYPE_APP_ICON || type == TYPE_CHOOSE_COLOR;
+                    type == TYPE_TEXT_PREFERENCE || type == 18 || type == TYPE_APP_ICON || type == TYPE_CHOOSE_COLOR || type == TYPE_CHAT_LIST;
         }
 
         private void showOptionsForTheme(Theme.ThemeInfo themeInfo) {
@@ -2111,13 +2114,12 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                     view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
                     break;
                 case TYPE_CHAT_LIST:
-                    view = new ChatListCell(mContext) {
+                    view = new DahlChatListCell(mContext) {
                         @Override
-                        protected void didSelectChatType(boolean threeLines) {
-                            SharedConfig.setUseThreeLinesLayout(threeLines);
+                        protected void didSelectChatType(int lines) {
+                            DahlSettings.setChatListLines(lines);
                         }
                     };
-                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
                     break;
                 case TYPE_NIGHT_THEME:
                     view = new NotificationsCheckCell(mContext, 21, 60, true);
@@ -2652,7 +2654,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
     public ArrayList<ThemeDescription> getThemeDescriptions() {
         ArrayList<ThemeDescription> themeDescriptions = new ArrayList<>();
 
-        themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_CELLBACKGROUNDCOLOR, new Class[]{TextSettingsCell.class, TextCheckCell.class, HeaderCell.class, BrightnessControlCell.class, ThemeTypeCell.class, TextSizeCell.class, BubbleRadiusCell.class, ChatListCell.class, NotificationsCheckCell.class, ThemesHorizontalListCell.class, TintRecyclerListView.class, TextCell.class, PeerColorActivity.ChangeNameColorCell.class, SwipeGestureSettingsView.class, DefaultThemesPreviewCell.class, AppIconsSelectorCell.class}, null, null, null, Theme.key_windowBackgroundWhite));
+        themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_CELLBACKGROUNDCOLOR, new Class[]{TextSettingsCell.class, TextCheckCell.class, HeaderCell.class, BrightnessControlCell.class, ThemeTypeCell.class, TextSizeCell.class, BubbleRadiusCell.class, DahlChatListCell.class, NotificationsCheckCell.class, ThemesHorizontalListCell.class, TintRecyclerListView.class, TextCell.class, PeerColorActivity.ChangeNameColorCell.class, SwipeGestureSettingsView.class, DefaultThemesPreviewCell.class, AppIconsSelectorCell.class}, null, null, null, Theme.key_windowBackgroundWhite));
         themeDescriptions.add(new ThemeDescription(fragmentView, ThemeDescription.FLAG_BACKGROUND, null, null, null, null, Theme.key_windowBackgroundGray));
 
         themeDescriptions.add(new ThemeDescription(actionBar, ThemeDescription.FLAG_BACKGROUND, null, null, null, null, Theme.key_actionBarDefault));
@@ -2699,8 +2701,8 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
         themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_PROGRESSBAR, new Class[]{BubbleRadiusCell.class}, new String[]{"sizeBar"}, null, null, null, Theme.key_player_progress));
         themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{BubbleRadiusCell.class}, new String[]{"sizeBar"}, null, null, null, Theme.key_player_progressBackground));
 
-        themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{ChatListCell.class}, null, null, null, Theme.key_radioBackground));
-        themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{ChatListCell.class}, null, null, null, Theme.key_radioBackgroundChecked));
+        themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{DahlChatListCell.class}, null, null, null, Theme.key_radioBackground));
+        themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{DahlChatListCell.class}, null, null, null, Theme.key_radioBackgroundChecked));
 
         themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{NotificationsCheckCell.class}, new String[]{"textView"}, null, null, null, Theme.key_windowBackgroundWhiteBlackText));
         themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{NotificationsCheckCell.class}, new String[]{"valueTextView"}, null, null, null, Theme.key_windowBackgroundWhiteGrayText2));
@@ -2748,6 +2750,8 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                     ((AppIconsSelectorCell) ch).getAdapter().notifyDataSetChanged();
                 } else if (ch instanceof PeerColorActivity.ChangeNameColorCell) {
                     ((PeerColorActivity.ChangeNameColorCell) ch).updateColors();
+                }else if(ch instanceof DahlChatListCell){
+                    ((DahlChatListCell)ch).getAdapter().notifyDataSetChanged();
                 }
             }
             for (int i = 0; i < listView.getCachedChildCount(); i++) {
@@ -2756,6 +2760,8 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                     ((AppIconsSelectorCell) ch).getAdapter().notifyDataSetChanged();
                 } else if (ch instanceof PeerColorActivity.ChangeNameColorCell) {
                     ((PeerColorActivity.ChangeNameColorCell) ch).updateColors();
+                }else if(ch instanceof DahlChatListCell){
+                    ((DahlChatListCell)ch).getAdapter().notifyDataSetChanged();
                 }
             }
             for (int i = 0; i < listView.getHiddenChildCount(); i++) {
@@ -2764,6 +2770,8 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                     ((AppIconsSelectorCell) ch).getAdapter().notifyDataSetChanged();
                 } else if (ch instanceof PeerColorActivity.ChangeNameColorCell) {
                     ((PeerColorActivity.ChangeNameColorCell) ch).updateColors();
+                }else if(ch instanceof DahlChatListCell){
+                    ((DahlChatListCell)ch).getAdapter().notifyDataSetChanged();
                 }
             }
             for (int i = 0; i < listView.getAttachedScrapChildCount(); i++) {
@@ -2772,6 +2780,8 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                     ((AppIconsSelectorCell) ch).getAdapter().notifyDataSetChanged();
                 } else if (ch instanceof PeerColorActivity.ChangeNameColorCell) {
                     ((PeerColorActivity.ChangeNameColorCell) ch).updateColors();
+                }else if(ch instanceof DahlChatListCell){
+                    ((DahlChatListCell)ch).getAdapter().notifyDataSetChanged();
                 }
             }
         }, Theme.key_windowBackgroundWhiteHintText, Theme.key_windowBackgroundWhiteBlackText, Theme.key_windowBackgroundWhiteValueText));

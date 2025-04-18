@@ -145,8 +145,8 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
         }
     }
 
-    private Paint bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private Paint leftShadowPaint = new Paint(Paint.ANTI_ALIAS_FLAG),
+    private final Paint bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint leftShadowPaint = new Paint(Paint.ANTI_ALIAS_FLAG),
             rightShadowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private float leftAlpha, rightAlpha;
     private float transitionProgress = 1f;
@@ -209,6 +209,8 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
     ValueAnimator pullingDownBackAnimator;
 
     public ReactionHolderView nextRecentReaction;
+
+    public boolean channelReactions;
 
     float pullingLeftOffset;
 
@@ -290,7 +292,9 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
                     boolean b1 = oldProgress > 1f;
                     boolean b2 = newProgress > 1f;
                     if (b1 != b2) {
-                        recyclerListView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+                        try {
+                            recyclerListView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+                        } catch (Exception ignore) {}
                     }
                     if (pullingLeftOffset < 0) {
                         dx = (int) pullingLeftOffset;
@@ -321,7 +325,9 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
                     boolean b1 = oldProgress > 1f;
                     boolean b2 = newProgress > 1f;
                     if (b1 != b2) {
-                        recyclerListView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+                        try {
+                            recyclerListView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+                        } catch (Exception ignore) {}
                     }
                     if (customReactionsContainer != null) {
                         customReactionsContainer.invalidate();
@@ -1044,6 +1050,7 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
             }
         }
         hitLimit = type == TYPE_DEFAULT && messageObject != null && chosenCount >= MessagesController.getInstance(currentAccount).getChatMaxUniqReactions(messageObject.getDialogId());
+        channelReactions = type == TYPE_DEFAULT && messageObject != null && ChatObject.isChannelAndNotMegaGroup(MessagesController.getInstance(currentAccount).getChat(-messageObject.getDialogId()));
         TLRPC.ChatFull reactionsChat = chatFull;
         List<ReactionsLayoutInBubble.VisibleReaction> visibleReactions = new ArrayList<>();
         if (message != null && message.isForwardedChannelPost()) {
@@ -2160,7 +2167,9 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
         Runnable longPressRunnable = new Runnable() {
             @Override
             public void run() {
-                performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                try {
+                    performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                } catch (Exception ignored) {}
                 pressedReactionPosition = visibleReactionsList.indexOf(currentReaction);
                 pressedReaction = currentReaction;
                 ReactionsContainerLayout.this.invalidate();

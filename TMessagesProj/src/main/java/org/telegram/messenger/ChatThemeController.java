@@ -11,6 +11,7 @@ import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.ResultCallback;
 import org.telegram.tgnet.SerializedData;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.tgnet.tl.TL_account;
 import org.telegram.ui.ActionBar.EmojiThemes;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ChatBackgroundDrawable;
@@ -21,6 +22,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+
+import ru.dahl.messenger.settings.DahlSettings;
 
 public class ChatThemeController extends BaseController {
 
@@ -72,13 +75,13 @@ public class ChatThemeController extends BaseController {
 
         boolean needReload = System.currentTimeMillis() - lastReloadTimeMs > reloadTimeoutMs;
         if (allChatThemes == null || allChatThemes.isEmpty() || needReload) {
-            TLRPC.TL_account_getChatThemes request = new TLRPC.TL_account_getChatThemes();
+            TL_account.getChatThemes request = new TL_account.getChatThemes();
             request.hash = themesHash;
             ConnectionsManager.getInstance(UserConfig.selectedAccount).sendRequest(request, (response, error) -> chatThemeQueue.postRunnable(() -> {
                 boolean isError = false;
                 final List<EmojiThemes> chatThemes;
-                if (response instanceof TLRPC.TL_account_themes) {
-                    TLRPC.TL_account_themes resp = (TLRPC.TL_account_themes) response;
+                if (response instanceof TL_account.TL_themes) {
+                    TL_account.TL_themes resp = (TL_account.TL_themes) response;
                     themesHash = resp.hash;
                     lastReloadTimeMs = System.currentTimeMillis();
 
@@ -99,7 +102,7 @@ public class ChatThemeController extends BaseController {
                         chatThemes.add(chatTheme);
                     }
                     editor.apply();
-                } else if (response instanceof TLRPC.TL_account_themesNotModified) {
+                } else if (response instanceof TL_account.TL_themesNotModified) {
                    // if (allChatThemes == null || allChatThemes.isEmpty()) {
                         chatThemes = getAllChatThemesFromPrefs();
 //                    } else {
@@ -297,6 +300,9 @@ public class ChatThemeController extends BaseController {
     }
 
     public TLRPC.WallPaper getDialogWallpaper(long dialogId) {
+        if(dialogId < 0 && !DahlSettings.isCustomWallpapersEnabled()){
+            return null;
+        }
         if (dialogId >= 0) {
             TLRPC.UserFull userFull = getMessagesController().getUserFull(dialogId);
             if (userFull != null) {

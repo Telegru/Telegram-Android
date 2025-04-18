@@ -10,6 +10,10 @@ import android.util.SparseLongArray;
 import android.view.View;
 import android.widget.FrameLayout;
 
+import androidx.annotation.DrawableRes;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.Utilities;
@@ -32,11 +36,14 @@ import java.util.Objects;
 
 public class UItem extends AdapterWithDiffUtils.Item {
 
+    public static final int MAX_SPAN_COUNT = -1;
+
     public View view;
     public int id;
     public boolean checked;
     public boolean collapsed;
     public boolean enabled = true;
+    public boolean reordering;
     public int pad;
     public boolean hideDivider;
     public int iconResId;
@@ -44,6 +51,7 @@ public class UItem extends AdapterWithDiffUtils.Item {
     public CharSequence animatedText;
     public String[] texts;
     public boolean accent, red, transparent, locked;
+    public int spanCount = MAX_SPAN_COUNT;
 
     public boolean include;
     public long dialogId;
@@ -51,6 +59,7 @@ public class UItem extends AdapterWithDiffUtils.Item {
     public int flags;
 
     public int intValue;
+    public float floatValue;
     public long longValue;
     public Utilities.Callback<Integer> intCallback;
 
@@ -208,6 +217,22 @@ public class UItem extends AdapterWithDiffUtils.Item {
         return i;
     }
 
+    public static UItem asCheck(int id, @NonNull CharSequence text, @Nullable CharSequence subtext) {
+        UItem i = new UItem(UniversalAdapter.VIEW_TYPE_CHECK, false);
+        i.id = id;
+        i.text = text;
+        i.subtext = subtext;
+        return i;
+    }
+
+    public static UItem asIconCheck(int id, @DrawableRes int iconResId, CharSequence text) {
+        UItem i = new UItem(UniversalAdapter.VIEW_TYPE_ICON_TEXT_CHECK_2, false);
+        i.id = id;
+        i.text = text;
+        i.iconResId = iconResId;
+        return i;
+    }
+
     public static UItem asRadio(int id, CharSequence text) {
         UItem i = new UItem(UniversalAdapter.VIEW_TYPE_RADIO, false);
         i.id = id;
@@ -290,21 +315,27 @@ public class UItem extends AdapterWithDiffUtils.Item {
         item.texts = choices;
         item.intValue = chosen;
         item.intCallback = whenChose;
+        item.longValue = -1;
         return item;
     }
 
     public static UItem asIntSlideView(
         int style,
-        int minStringResId, int min,
-        int valueMinStringResId, int valueStringResId, int valueMaxStringResId, int value,
-        int maxStringResId, int max,
+        int min, int value, int max,
+        Utilities.CallbackReturn<Integer, CharSequence> toString,
         Utilities.Callback<Integer> whenChose
     ) {
         UItem item = new UItem(UniversalAdapter.VIEW_TYPE_INTSLIDE, false);
         item.intValue = value;
         item.intCallback = whenChose;
-        item.object = SlideIntChooseView.Options.make(style, min, minStringResId, valueMinStringResId, valueStringResId, valueMaxStringResId, max, maxStringResId);
+        item.object = SlideIntChooseView.Options.make(style, min, max, toString);
+        item.longValue = -1;
         return item;
+    }
+
+    public UItem setMinSliderValue(int value) {
+        this.longValue = value;
+        return this;
     }
 
     public static UItem asQuickReply(QuickRepliesController.QuickReply quickReply) {
@@ -422,8 +453,21 @@ public class UItem extends AdapterWithDiffUtils.Item {
         return item;
     }
 
+    public UItem withOpenButton(Utilities.Callback<TLRPC.User> onOpenButton) {
+        this.checked = true;
+        this.object2 = onOpenButton;
+        return this;
+    }
+
     public static UItem asSearchMessage(MessageObject messageObject) {
         UItem item = new UItem(UniversalAdapter.VIEW_TYPE_SEARCH_MESSAGE, false);
+        item.object = messageObject;
+        return item;
+    }
+
+    public static UItem asSearchMessage(int id, MessageObject messageObject) {
+        UItem item = new UItem(UniversalAdapter.VIEW_TYPE_SEARCH_MESSAGE, false);
+        item.id = id;
         item.object = messageObject;
         return item;
     }
@@ -505,6 +549,16 @@ public class UItem extends AdapterWithDiffUtils.Item {
         return this;
     }
 
+    public UItem setSpanCount(int spanCount) {
+        this.spanCount = spanCount;
+        return this;
+    }
+
+    public UItem setReordering(boolean reordering) {
+        this.reordering = reordering;
+        return this;
+    }
+
     public <F extends UItemFactory<?>> boolean instanceOf(Class<F> factoryClass) {
         if (viewType < factoryViewTypeStartsWith) return false;
         if (factoryInstances == null) return false;
@@ -575,6 +629,7 @@ public class UItem extends AdapterWithDiffUtils.Item {
             TextUtils.equals(textValue, item.textValue) &&
             view == item.view &&
             intValue == item.intValue &&
+            Math.abs(floatValue - item.floatValue) < 0.01f &&
             longValue == item.longValue &&
             Objects.equals(object, item.object) &&
             Objects.equals(object2, item.object2)
@@ -630,6 +685,10 @@ public class UItem extends AdapterWithDiffUtils.Item {
         }
 
         public void bindView(View view, UItem item, boolean divider) {
+
+        }
+
+        public void attachedView(View view, UItem item) {
 
         }
 

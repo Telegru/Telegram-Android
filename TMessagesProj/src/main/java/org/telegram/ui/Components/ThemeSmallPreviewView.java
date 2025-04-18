@@ -307,7 +307,7 @@ public class ThemeSmallPreviewView extends FrameLayout implements NotificationCe
                         ((MotionBackgroundDrawable) item.previewDrawable).setPatternBitmap(intensity);
                     }
                     ChatThemeController.chatThemeQueue.postRunnable(() -> {
-                        Bitmap bitmap = SvgHelper.getBitmap(R.raw.default_pattern, AndroidUtilities.dp(PATTERN_BITMAP_MAXWIDTH), AndroidUtilities.dp(PATTERN_BITMAP_MAXHEIGHT), Color.BLACK, AndroidUtilities.density);
+                        Bitmap bitmap = SvgHelper.getBitmap(R.raw.dahl_wallpaper_russia, AndroidUtilities.dp(PATTERN_BITMAP_MAXWIDTH), AndroidUtilities.dp(PATTERN_BITMAP_MAXHEIGHT), Color.BLACK, AndroidUtilities.density);
                         AndroidUtilities.runOnUIThread(() -> {
                             if (item.previewDrawable instanceof MotionBackgroundDrawable) {
                                 MotionBackgroundDrawable motionBackgroundDrawable = (MotionBackgroundDrawable) item.previewDrawable;

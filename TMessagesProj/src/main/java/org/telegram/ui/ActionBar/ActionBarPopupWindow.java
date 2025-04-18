@@ -43,6 +43,7 @@ import org.telegram.messenger.AnimationNotificationsLocker;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.Utilities;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.PopupSwipeBackLayout;
 
@@ -113,7 +114,7 @@ public class ActionBarPopupWindow extends PopupWindow {
         private HashMap<View, Integer> positions = new HashMap<>();
         private int gapStartY = -1000000;
         private int gapEndY = -1000000;
-        private Rect bgPaddings = new Rect();
+        private final Rect bgPaddings = new Rect();
         private onSizeChangedListener onSizeChangedListener;
         private float reactionsEnterProgress = 1f;
 
@@ -131,6 +132,10 @@ public class ActionBarPopupWindow extends PopupWindow {
 
         public int subtractBackgroundHeight;
         Rect rect;
+
+        public Rect getPadding() {
+            return bgPaddings;
+        }
 
         public ActionBarPopupWindowLayout(Context context) {
             this(context, null);

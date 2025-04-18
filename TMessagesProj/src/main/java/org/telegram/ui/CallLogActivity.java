@@ -1,5 +1,7 @@
 package org.telegram.ui;
 
+import static org.telegram.messenger.LocaleController.formatString;
+
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
@@ -16,6 +18,7 @@ import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.Html;
 import android.text.SpannableString;
 import android.text.style.ImageSpan;
 import android.util.TypedValue;
@@ -31,6 +34,7 @@ import android.widget.TextView;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ChatObject;
+import org.telegram.messenger.ContactsController;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.NotificationCenter;
@@ -51,6 +55,7 @@ import org.telegram.ui.Cells.LoadingCell;
 import org.telegram.ui.Cells.LocationCell;
 import org.telegram.ui.Cells.ProfileSearchCell;
 import org.telegram.ui.Cells.ShadowSectionCell;
+import org.telegram.ui.Cells.TextCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Components.CheckBox2;
 import org.telegram.ui.Components.CombinedDrawable;
@@ -69,6 +74,8 @@ import androidx.collection.LongSparseArray;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import ru.dahl.messenger.settings.DahlSettings;
 
 public class CallLogActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate {
 
@@ -317,7 +324,11 @@ public class CallLogActivity extends BaseFragment implements NotificationCenter.
 			imageView.setOnClickListener(v -> {
 				CallLogRow row = (CallLogRow) v.getTag();
 				TLRPC.UserFull userFull = getMessagesController().getUserFull(row.user.id);
-				VoIPHelper.startCall(lastCallUser = row.user, row.video, row.video || userFull != null && userFull.video_calls_available, getParentActivity(), null, getAccountInstance());
+				if (DahlSettings.isConfirmCall()) {
+					showCallConfirmationDialog(row.video, row.user, userFull);
+				} else {
+					VoIPHelper.startCall(lastCallUser = row.user, row.video, row.video || userFull != null && userFull.video_calls_available, getParentActivity(), null, getAccountInstance());
+				}
 			});
 			imageView.setContentDescription(LocaleController.getString(R.string.Call));
 			addView(imageView, LayoutHelper.createFrame(48, 48, (LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT) | Gravity.CENTER_VERTICAL, 8, 0, 8, 0));
@@ -575,7 +586,11 @@ public class CallLogActivity extends BaseFragment implements NotificationCenter.
 			ContactsActivity contactsFragment = new ContactsActivity(args);
 			contactsFragment.setDelegate((user, param, activity) -> {
 				TLRPC.UserFull userFull = getMessagesController().getUserFull(user.id);
-				VoIPHelper.startCall(lastCallUser = user, false, userFull != null && userFull.video_calls_available, getParentActivity(), null, getAccountInstance());
+				if(DahlSettings.isConfirmCall()){
+					showCallConfirmationDialog(false, user, userFull);
+				}else {
+					VoIPHelper.startCall(lastCallUser = user, false, userFull != null && userFull.video_calls_available, getParentActivity(), null, getAccountInstance());
+				}
 			});
 			presentFragment(contactsFragment);
 		});
@@ -857,6 +872,8 @@ public class CallLogActivity extends BaseFragment implements NotificationCenter.
 	private class ListAdapter extends RecyclerListView.SelectionAdapter {
 
 		private Context mContext;
+		private int createLinkRow;
+		private int createLinkInfoRow;
 		private int activeHeaderRow;
 		private int callsHeaderRow;
 		private int activeStartRow;
@@ -872,6 +889,8 @@ public class CallLogActivity extends BaseFragment implements NotificationCenter.
 		}
 
 		private void updateRows() {
+			createLinkRow = -1;
+			createLinkInfoRow = -1;
 			activeHeaderRow = -1;
 			callsHeaderRow = -1;
 			activeStartRow = -1;
@@ -965,7 +984,7 @@ public class CallLogActivity extends BaseFragment implements NotificationCenter.
 		@Override
 		public boolean isEnabled(RecyclerView.ViewHolder holder) {
 			int type = holder.getItemViewType();
-			return type == 0 || type == 4;
+			return type == 0 || type == 4 || type == 6;
 		}
 
 		@Override
@@ -990,7 +1009,7 @@ public class CallLogActivity extends BaseFragment implements NotificationCenter.
 					break;
 				case 2:
 					view = new TextInfoPrivacyCell(mContext);
-					view.setBackgroundDrawable(Theme.getThemedDrawableByKey(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
+					view.setBackground(Theme.getThemedDrawableByKey(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
 					break;
 				case 3:
 					view = new HeaderCell(mContext, Theme.key_windowBackgroundWhiteBlueHeader, 21, 15, 2, false, getResourceProvider());
@@ -999,9 +1018,15 @@ public class CallLogActivity extends BaseFragment implements NotificationCenter.
 				case 4:
 					view = new GroupCallCell(mContext);
 					break;
+				case 6:
+					view = new TextCell(mContext);
+					view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+					break;
 				case 5:
 				default:
-					view = new ShadowSectionCell(mContext);
+					view = new TextInfoPrivacyCell(mContext);
+					((TextInfoPrivacyCell) view).setFixedSize(12);
+					break;
 			}
 			return new RecyclerListView.Holder(view);
 		}
@@ -1086,6 +1111,23 @@ public class CallLogActivity extends BaseFragment implements NotificationCenter.
 					cell.profileSearchCell.setData(chat, null, null, text, false, false);
 					break;
 				}
+				case 5: {
+					TextInfoPrivacyCell cell = (TextInfoPrivacyCell) holder.itemView;
+					if (position == createLinkInfoRow) {
+						cell.setText("You can create a link that will allow your friends on Telegram to join the call.");
+						cell.setFixedSize(0);
+					} else {
+						cell.setText(null);
+						cell.setFixedSize(12);
+					}
+					break;
+				}
+				case 6: {
+					TextCell cell = (TextCell) holder.itemView;
+					cell.setTextAndIcon("Create Call Link", R.drawable.menu_link_create, false);
+					cell.setColors(Theme.key_windowBackgroundWhiteBlueText4, Theme.key_windowBackgroundWhiteBlueText4);
+					break;
+				}
 			}
 		}
 
@@ -1099,8 +1141,10 @@ public class CallLogActivity extends BaseFragment implements NotificationCenter.
 				return 4;
 			} else if (i == loadingCallsRow) {
 				return 1;
-			} else if (i == sectionRow) {
+			} else if (i == sectionRow || i == createLinkInfoRow) {
 				return 5;
+			} else if (i == createLinkRow) {
+				return 6;
 			}
 			return 2;
 		}
@@ -1255,5 +1299,22 @@ public class CallLogActivity extends BaseFragment implements NotificationCenter.
 		themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{HeaderCell.class}, new String[]{"textView"}, null, null, null, Theme.key_windowBackgroundWhiteBlueHeader));
 
 		return themeDescriptions;
+	}
+
+	private void showCallConfirmationDialog(boolean videoCall, TLRPC.User user, @Nullable TLRPC.UserFull userFull) {
+		String nameColor = String.format("#%06X", (0xFFFFFF & Theme.getColor(Theme.key_dialogTextBlack)));
+		String name = AndroidUtilities.escape(ContactsController.formatName(user.first_name, user.last_name).replace("\n", ""));
+		CharSequence message = Html.fromHtml(formatString(R.string.CallConfirmationAlert, nameColor, name));
+		AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity())
+				.setTitle(LocaleController.getString(videoCall ? R.string.VideoCall : R.string.Call))
+				.setMessage(message)
+				.setPositiveButton(LocaleController.getString(R.string.Call), (dialog, which) -> {
+					VoIPHelper.startCall(user, videoCall, userFull != null && userFull.video_calls_available, getParentActivity(), userFull, getAccountInstance());
+				})
+				.setNegativeButton(LocaleController.getString(R.string.Cancel), (dialog, which) -> {
+					dialog.dismiss();
+				});
+
+		showDialog(builder.create());
 	}
 }

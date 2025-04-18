@@ -41,7 +41,7 @@ public class ReportAlert extends BottomSheet {
             super(context);
 
             background = new View(context);
-            background.setBackground(Theme.AdaptiveRipple.filledRectByKey(Theme.key_featuredStickers_addButton, 4));
+            background.setBackground(Theme.AdaptiveRipple.filledRectByKey(Theme.key_featuredStickers_addButton, 8));
             addView(background, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, 0, 16, 16, 16, 16));
 
             textView = new TextView(context);
@@ -138,6 +138,7 @@ public class ReportAlert extends BottomSheet {
         clearButton = new BottomSheetCell(context, resourcesProvider);
         clearButton.setBackground(null);
         clearButton.setText(LocaleController.getString(R.string.ReportSend));
+        ScaleStateListAnimator.apply(clearButton);
         clearButton.background.setOnClickListener(v -> {
             AndroidUtilities.hideKeyboard(editText);
             onSend(type, editText.getText().toString());

@@ -79,6 +79,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
 
+import ru.dahl.messenger.utils.DahlUtils;
+
 public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements DialogCell.DialogCellDelegate {
     public final static int VIEW_TYPE_DIALOG = 0,
             VIEW_TYPE_FLICKER = 1,
@@ -220,7 +222,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
 
     public int fixScrollGap(RecyclerListView animationSupportListView, int p, int offset, boolean hasHidenArchive, boolean hasStories, boolean hasTabs, boolean oppened) {
         int itemsToEnd = getItemCount() - p;
-        int cellHeight = AndroidUtilities.dp(SharedConfig.useThreeLinesLayout ? 78 : 72);
+        int cellHeight = DahlUtils.getChatCellHeight();
         int bottom = offset + animationSupportListView.getPaddingTop() + itemsToEnd * cellHeight + itemsToEnd - 1;
         //fix height changed
         int top = offset + animationSupportListView.getPaddingTop() - p * cellHeight - p;
@@ -570,6 +572,9 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                     view = new ProfileSearchCell(mContext);
                 } else {
                     DialogCell dialogCell = new DialogCell(parentFragment, mContext, true, false, currentAccount, null);
+                    if (showOpenBotButton()) {
+                        dialogCell.allowBotOpenButton(true, this::onOpenBot);
+                    }
                     dialogCell.setArchivedPullAnimation(pullForegroundDrawable);
                     dialogCell.setPreloader(preloader);
                     dialogCell.setDialogCellDelegate(this);
@@ -1310,7 +1315,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                     height = AndroidUtilities.displaySize.y - ActionBar.getCurrentActionBarHeight() - (Build.VERSION.SDK_INT >= 21 ? AndroidUtilities.statusBarHeight : 0);
                 }
                 height -= blurOffset;
-                int cellHeight = AndroidUtilities.dp(SharedConfig.useThreeLinesLayout ? 78 : 72);
+                int cellHeight = DahlUtils.getChatCellHeight();
                 int dialogsHeight = 0;
                 for (int i = 0; i < size; i++) {
                     if (itemInternals.get(i).viewType == VIEW_TYPE_DIALOG) {
@@ -1530,7 +1535,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
     }
 
     public int getItemHeight(int position) {
-        int cellHeight = AndroidUtilities.dp(SharedConfig.useThreeLinesLayout ? 78 : 72);
+        int cellHeight = DahlUtils.getChatCellHeight();
         if (itemInternals.get(position).viewType == VIEW_TYPE_DIALOG) {
             if (itemInternals.get(position).isForumCell && !collapsedView) {
                 return AndroidUtilities.dp(SharedConfig.useThreeLinesLayout ? 86 : 91);
@@ -1539,5 +1544,13 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
             }
         }
         return 0;
+    }
+
+    protected boolean showOpenBotButton() {
+        return false;
+    }
+
+    protected void onOpenBot(TLRPC.User user) {
+
     }
 }

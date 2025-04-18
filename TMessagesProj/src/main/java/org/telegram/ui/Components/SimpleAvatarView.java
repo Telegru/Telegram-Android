@@ -17,6 +17,8 @@ import org.telegram.messenger.ImageReceiver;
 import org.telegram.tgnet.TLObject;
 import org.telegram.ui.ActionBar.Theme;
 
+import ru.dahl.messenger.settings.DahlSettings;
+
 public class SimpleAvatarView extends View {
     public final static int SELECT_ANIMATION_DURATION = 200;
 
@@ -40,7 +42,7 @@ public class SimpleAvatarView extends View {
     }
 
     {
-        avatarImage.setRoundRadius(AndroidUtilities.dp(28));
+        avatarImage.setRoundRadius(DahlSettings.INSTANCE.getAvatarCornerRadius());
         selectPaint.setStrokeWidth(AndroidUtilities.dp(2));
         selectPaint.setStyle(Paint.Style.STROKE);
     }

@@ -34,6 +34,7 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.ShareBroadcastReceiver;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.Utilities;
 import org.telegram.messenger.support.customtabs.CustomTabsCallback;
 import org.telegram.messenger.support.customtabs.CustomTabsClient;
 import org.telegram.messenger.support.customtabs.CustomTabsIntent;
@@ -44,11 +45,13 @@ import org.telegram.messenger.support.customtabsclient.shared.ServiceConnection;
 import org.telegram.messenger.support.customtabsclient.shared.ServiceConnectionCallback;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.tgnet.tl.TL_account;
 import org.telegram.ui.ActionBar.ActionBarLayout;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.BottomSheetTabs;
 import org.telegram.ui.ActionBar.Theme;
+import org.telegram.ui.BubbleActivity;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.web.RestrictedDomainsList;
 
@@ -161,6 +164,13 @@ public class Browser {
         openUrl(context, Uri.parse(url), true);
     }
 
+    public static void openUrlInSystemBrowser(Context context, String url) {
+        if (url == null) {
+            return;
+        }
+        openUrl(context, Uri.parse(url), false, true, false, null, null, false, false, false);
+    }
+
     public static void openUrl(Context context, Uri uri) {
         openUrl(context, uri, true);
     }
@@ -223,7 +233,26 @@ public class Browser {
     }
 
     public static class Progress {
-        public void init() {}
+
+        private Runnable onInitListener;
+        private Runnable onCancelListener;
+        private Runnable onEndListener;
+
+        public Progress() {
+
+        }
+
+        public Progress(Runnable init, Runnable end) {
+            this.onInitListener = init;
+            this.onEndListener = end;
+        }
+
+        public void init() {
+            if (onInitListener != null) {
+                onInitListener.run();
+                onInitListener = null;
+            }
+        }
         public void end() {
             end(false);
         }
@@ -243,26 +272,26 @@ public class Browser {
             end(replaced);
         }
 
-        private Runnable onCancelListener;
-        public void onCancel(Runnable onCancelListener) {
+        public Progress onCancel(Runnable onCancelListener) {
             this.onCancelListener = onCancelListener;
+            return this;
         }
 
-        private Runnable onEndListener;
-        public void onEnd(Runnable onEndListener) {
+        public Progress onEnd(Runnable onEndListener) {
             this.onEndListener = onEndListener;
+            return this;
         }
     }
 
     public static void openUrl(final Context context, Uri uri, final boolean allowCustom, boolean tryTelegraph) {
-        openUrl(context, uri, allowCustom, tryTelegraph, false, null, null, false, true);
+        openUrl(context, uri, allowCustom, tryTelegraph, false, null, null, false, true, false);
     }
 
     public static void openUrl(final Context context, Uri uri, final boolean allowCustom, boolean tryTelegraph, Progress inCaseLoading) {
-        openUrl(context, uri, allowCustom, tryTelegraph, false, inCaseLoading, null, false, true);
+        openUrl(context, uri, allowCustom, tryTelegraph, false, inCaseLoading, null, false, true, false);
     }
 
-    public static void openUrl(final Context context, Uri uri, boolean _allowCustom, boolean tryTelegraph, boolean forceNotInternalForApps, Progress inCaseLoading, String browser, boolean allowIntent, boolean allowInAppBrowser) {
+    public static void openUrl(final Context context, Uri uri, boolean _allowCustom, boolean tryTelegraph, boolean forceNotInternalForApps, Progress inCaseLoading, String browser, boolean allowIntent, boolean allowInAppBrowser, boolean forceRequest) {
         if (context == null || uri == null) {
             return;
         }
@@ -284,7 +313,7 @@ public class Browser {
                     };
 
                     Uri finalUri = uri;
-                    TLRPC.TL_messages_getWebPagePreview req = new TLRPC.TL_messages_getWebPagePreview();
+                    TL_account.getWebPagePreview req = new TL_account.getWebPagePreview();
                     req.message = uri.toString();
                     final int reqId = ConnectionsManager.getInstance(UserConfig.selectedAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
                         if (inCaseLoading != null) {
@@ -297,11 +326,15 @@ public class Browser {
                         }
 
                         boolean ok = false;
-                        if (response instanceof TLRPC.TL_messageMediaWebPage) {
-                            TLRPC.TL_messageMediaWebPage webPage = (TLRPC.TL_messageMediaWebPage) response;
-                            if (webPage.webpage instanceof TLRPC.TL_webPage && webPage.webpage.cached_page != null) {
-                                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.openArticle, webPage.webpage, finalUri.toString());
-                                ok = true;
+                        if (response instanceof TL_account.webPagePreview) {
+                            final TL_account.webPagePreview preview = (TL_account.webPagePreview) response;
+                            MessagesController.getInstance(currentAccount).putUsers(preview.users, false);
+                            if (preview.media instanceof TLRPC.TL_messageMediaWebPage) {
+                                TLRPC.TL_messageMediaWebPage webPage = (TLRPC.TL_messageMediaWebPage) preview.media;
+                                if (webPage.webpage instanceof TLRPC.TL_webPage && webPage.webpage.cached_page != null) {
+                                    NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.openArticle, webPage.webpage, finalUri.toString());
+                                    ok = true;
+                                }
                             }
                         }
                         if (!ok) {
@@ -387,7 +420,7 @@ public class Browser {
         }
         try {
             final boolean inappBrowser = (
-                allowInAppBrowser &&
+                allowInAppBrowser && BubbleActivity.instance == null &&
                 SharedConfig.inappBrowser &&
                 TextUtils.isEmpty(browserPackage) &&
                 !RestrictedDomainsList.getInstance().isRestricted(AndroidUtilities.getHostAuthority(uri, true)) &&
@@ -397,7 +430,7 @@ public class Browser {
             );
             final boolean isIntentScheme = uri.getScheme() != null && uri.getScheme().equalsIgnoreCase("intent");
             if (internalUri && LaunchActivity.instance != null) {
-                openAsInternalIntent(LaunchActivity.instance, uri.toString(), forceNotInternalForApps, inCaseLoading);
+                openAsInternalIntent(LaunchActivity.instance, uri.toString(), forceNotInternalForApps, forceRequest, inCaseLoading);
             } else {
                 if (inappBrowser) {
                     if (!openInExternalApp(context, uri.toString(), allowIntent)) {
@@ -420,15 +453,15 @@ public class Browser {
     }
 
     public static boolean openAsInternalIntent(Context context, String url) {
-        return openAsInternalIntent(context, url, false, null);
+        return openAsInternalIntent(context, url, false, false, null);
     }
     public static boolean openAsInternalIntent(Context context, String url, Browser.Progress progress) {
-        return openAsInternalIntent(context, url, false, progress);
+        return openAsInternalIntent(context, url, false, false, progress);
     }
     public static boolean openAsInternalIntent(Context context, String url,  boolean forceNotInternalForApps) {
-        return openAsInternalIntent(context, url, forceNotInternalForApps, null);
+        return openAsInternalIntent(context, url, forceNotInternalForApps, false, null);
     }
-    public static boolean openAsInternalIntent(Context context, String url, boolean forceNotInternalForApps, Browser.Progress progress) {
+    public static boolean openAsInternalIntent(Context context, String url, boolean forceNotInternalForApps, boolean forceRequest, Progress progress) {
         if (url == null) return false;
         LaunchActivity activity = null;
         if (AndroidUtilities.findActivity(context) instanceof LaunchActivity) {
@@ -445,6 +478,7 @@ public class Browser {
         intent.putExtra(android.provider.Browser.EXTRA_CREATE_NEW_TAB, true);
         intent.putExtra(android.provider.Browser.EXTRA_APPLICATION_ID, context.getPackageName());
         intent.putExtra(LaunchActivity.EXTRA_FORCE_NOT_INTERNAL_APPS, forceNotInternalForApps);
+        intent.putExtra(LaunchActivity.EXTRA_FORCE_REQUEST, forceRequest);
         activity.onNewIntent(intent, progress);
         return true;
     }
@@ -818,7 +852,7 @@ public class Browser {
         }
         if (newPath != null) {
             modifiedUriBuilder.append(newPath);
-        } else {
+        } else if (originalUri.getPath() != null) {
             modifiedUriBuilder.append(originalUri.getPath());
         }
         if (originalUri.getQuery() != null) {

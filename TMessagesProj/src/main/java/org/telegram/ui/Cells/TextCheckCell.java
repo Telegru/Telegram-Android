@@ -223,7 +223,7 @@ public class TextCheckCell extends FrameLayout {
         super.setPressed(pressed);
     }
 
-    public void setTextAndValueAndCheck(String text, String value, boolean checked, boolean multiline, boolean divider) {
+    public void setTextAndValueAndCheck(CharSequence text, CharSequence value, boolean checked, boolean multiline, boolean divider) {
         AvatarSpan.checkSpansParent(text, this);
         textView.setText(text);
         valueTextView.setText(value);

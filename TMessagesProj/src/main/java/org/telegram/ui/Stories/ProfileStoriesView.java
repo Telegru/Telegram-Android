@@ -32,6 +32,7 @@ import com.google.zxing.common.detector.MathUtils;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ChatObject;
+import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.ImageReceiver;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
@@ -52,6 +53,8 @@ import org.telegram.ui.ProfileActivity;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import ru.dahl.messenger.settings.DahlSettings;
 
 public class ProfileStoriesView extends View implements NotificationCenter.NotificationCenterDelegate {
 
@@ -101,7 +104,8 @@ public class ProfileStoriesView extends View implements NotificationCenter.Notif
     private class StoryCircle {
         public StoryCircle(TL_stories.StoryItem storyItem) {
             this.storyId = storyItem.id;
-            this.imageReceiver.setRoundRadius(dp(200));
+            int radius = (DahlSettings.getRectangularAvatars()) ? DahlSettings.getAvatarCornerRadius() : dp(200);
+            this.imageReceiver.setRoundRadius(radius);
             this.imageReceiver.setParentView(ProfileStoriesView.this);
             if (attached) {
                 this.imageReceiver.onAttachedToWindow();
@@ -181,6 +185,10 @@ public class ProfileStoriesView extends View implements NotificationCenter.Notif
     public void setStories(TL_stories.PeerStories peerStories) {
         this.peerStories = peerStories;
         updateStories(true, false);
+    }
+
+    public void update() {
+        updateStories(true, true);
     }
 
     private void updateStories(boolean animated, boolean asUpdate) {
@@ -380,11 +388,19 @@ public class ProfileStoriesView extends View implements NotificationCenter.Notif
         titleDrawable.setText(this.count > 0 ? LocaleController.formatPluralString("Stories", this.count) : "", animated && !LocaleController.isRTL);
 
         if (dialogId >= 0) {
-            TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(dialogId);
-            gradientTools.setUser(user, animated);
+            final TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(dialogId);
+            if (user != null && user.emoji_status instanceof TLRPC.TL_emojiStatusCollectible) {
+                gradientTools.setColor(MessagesController.PeerColor.fromCollectible(user.emoji_status), animated);
+            } else {
+                gradientTools.setUser(user, animated);
+            }
         } else {
             TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-dialogId);
-            gradientTools.setChat(chat, animated);
+            if (chat != null && chat.emoji_status instanceof TLRPC.TL_emojiStatusCollectible) {
+                gradientTools.setColor(MessagesController.PeerColor.fromCollectible(chat.emoji_status), animated);
+            } else {
+                gradientTools.setChat(chat, animated);
+            }
         }
 
         invalidate();
@@ -1090,7 +1106,7 @@ public class ProfileStoriesView extends View implements NotificationCenter.Notif
 
     }
 
-    private Runnable onLongPressRunnable = () -> onLongPress();
+    private final Runnable onLongPressRunnable = () -> onLongPress();
 
     private long tapTime;
     private float tapX, tapY;

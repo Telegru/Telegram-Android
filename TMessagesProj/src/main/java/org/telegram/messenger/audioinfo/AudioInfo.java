@@ -52,6 +52,8 @@ public abstract class AudioInfo {
 	protected Bitmap cover;			// cover image data
     protected Bitmap smallCover;	// cover image data
 
+	private File coverFile;
+
 	public String getBrand() {
 		return brand;
 	}
@@ -132,6 +134,14 @@ public abstract class AudioInfo {
 		return cover;
 	}
 
+	public File getCoverFile() {
+		return coverFile;
+	}
+
+	public void setCoverFile(File file) {
+		coverFile = file;
+	}
+
     public Bitmap getSmallCover() {
         return smallCover;
     }
@@ -149,7 +159,10 @@ public abstract class AudioInfo {
 				OtherAudioInfo info = new OtherAudioInfo(file);
 				if (info.failed) return null;
 				return info;
-			} else if (file.getAbsolutePath().endsWith("mp3")) {
+			} else if (file.getAbsolutePath().endsWith("mp3") || (
+				(header[0] == 'I' && header[1] == 'D' && header[2] == '3') ||
+				(header[0] == 'T' && header[1] == 'A' && header[2] == 'G')
+			)) {
                 return new MP3Info(input, file.length());
             } else {
 				OtherAudioInfo info = new OtherAudioInfo(file);

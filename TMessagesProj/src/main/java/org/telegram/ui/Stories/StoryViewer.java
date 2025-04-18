@@ -69,6 +69,7 @@ import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ArticleViewer;
 import org.telegram.ui.Cells.ChatActionCell;
+import org.telegram.ui.Cells.ChatMessageCell;
 import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
@@ -79,6 +80,8 @@ import org.telegram.ui.LaunchActivity;
 
 import java.util.ArrayList;
 import java.util.Objects;
+
+import ru.dahl.messenger.settings.DahlSettings;
 
 public class StoryViewer implements NotificationCenter.NotificationCenterDelegate, BaseFragment.AttachedSheet {
 
@@ -453,7 +456,9 @@ public class StoryViewer implements NotificationCenter.NotificationCenterDelegat
                             if (swipeToReplyOffset > maxOffset && !swipeToReplyWaitingKeyboard) {
                                 swipeToReplyWaitingKeyboard = true;
                                 showKeyboard();
-                                windowView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+                                try {
+                                    windowView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+                                } catch (Exception ignored) {}
                             }
                             swipeToReplyProgress = Utilities.clamp(swipeToReplyOffset / maxOffset, 1f, 0);
                             if (storiesViewPager.getCurrentPeerView() != null) {
@@ -506,7 +511,9 @@ public class StoryViewer implements NotificationCenter.NotificationCenterDelegat
                     if (swipeToReplyOffset != 0 && storiesIntro == null) {
                         if (velocityY < -1000 && !swipeToReplyWaitingKeyboard) {
                             swipeToReplyWaitingKeyboard = true;
-                            windowView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+                            try {
+                                windowView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+                            } catch (Exception ignored) {}
                             showKeyboard();
                         }
                     }
@@ -754,7 +761,7 @@ public class StoryViewer implements NotificationCenter.NotificationCenterDelegat
                                     Integer cellAvatarImageRadius = transitionViewHolder != null ? transitionViewHolder.getAvatarImageRoundRadius() : null;
                                     int newRoundRadius = (int) (AndroidUtilities.lerp(rect3.width() / 2f, cellAvatarImageRadius != null ? cellAvatarImageRadius : rect3.width() / 2f, 1f - progressToOpen));
 
-                                    headerView.backupImageView.getImageReceiver().setRoundRadius(newRoundRadius);
+                                    headerView.backupImageView.getImageReceiver().setRoundRadius(DahlSettings.INSTANCE.getAvatarCornerRadius());
                                     headerView.backupImageView.getImageReceiver().setVisible(true, false);
                                     final float alpha = crossfade ? progressToOpen : 1f;
                                     float thisAlpha = alpha;
@@ -779,14 +786,14 @@ public class StoryViewer implements NotificationCenter.NotificationCenterDelegat
                                     int oldRadius = transitionViewHolder.crossfadeToAvatarImage.getRoundRadius()[0];
                                     boolean isVisible = transitionViewHolder.crossfadeToAvatarImage.getVisible();
                                     transitionViewHolder.crossfadeToAvatarImage.setImageCoords(rect3);
-                                    transitionViewHolder.crossfadeToAvatarImage.setRoundRadius((int) (rect3.width() / 2f));
+                                    transitionViewHolder.crossfadeToAvatarImage.setRoundRadius((int) (DahlSettings.INSTANCE.getAvatarCornerRadius()));
                                     transitionViewHolder.crossfadeToAvatarImage.setVisible(true, false);
                                     canvas.saveLayerAlpha(rect3, (int) (255 * (1f - progressToOpen)), Canvas.ALL_SAVE_FLAG);
                                     transitionViewHolder.crossfadeToAvatarImage.draw(canvas);
                                     canvas.restore();
                                     transitionViewHolder.crossfadeToAvatarImage.setVisible(isVisible, false);
                                     transitionViewHolder.crossfadeToAvatarImage.setImageCoords(avatarRectTmp);
-                                    transitionViewHolder.crossfadeToAvatarImage.setRoundRadius(oldRadius);
+                                    transitionViewHolder.crossfadeToAvatarImage.setRoundRadius(DahlSettings.INSTANCE.getAvatarCornerRadius());
                                    // transitionViewHolder.crossfadeToAvatarImage.setVisible(false, false);
                                 }
 
@@ -960,8 +967,7 @@ public class StoryViewer implements NotificationCenter.NotificationCenterDelegat
                                     if ((int) (nowSeek * 10) != (int) (wasSeek * 10)) {
                                         try {
                                             peerView.performHapticFeedback(9, HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING);
-                                        } catch (Exception ignore) {
-                                        }
+                                        } catch (Exception ignore) {}
                                     }
                                     peerView.storyContainer.invalidate();
                                     lastTouchX = x;
@@ -1381,7 +1387,7 @@ public class StoryViewer implements NotificationCenter.NotificationCenterDelegat
                                 currentPlayerScope.firstFrameRendered = true;
                             }
                             FileLog.d("StoryViewer requestPlayer: currentPlayerScope.player start " + uri);
-                            currentPlayerScope.player.start(isPaused(), uri, t, isInSilentMode, currentSpeed);
+                            currentPlayerScope.player.start(false, isPaused(), uri, t, isInSilentMode, currentSpeed);
                             currentPlayerScope.invalidate();
                         } else {
                             FileLog.d("StoryViewer requestPlayer: url is null (1)");
@@ -1957,6 +1963,9 @@ public class StoryViewer implements NotificationCenter.NotificationCenterDelegat
                 if (transitionViewHolder.view != null) {
                     int[] loc = new int[2];
                     transitionViewHolder.view.getLocationOnScreen(loc);
+                    if (transitionViewHolder.view instanceof ChatMessageCell) {
+                        loc[1] += transitionViewHolder.view.getPaddingTop();
+                    }
                     fromXCell = loc[0];
                     fromYCell = loc[1];
                     if (transitionViewHolder.view instanceof StoriesListPlaceProvider.AvatarOverlaysView) {

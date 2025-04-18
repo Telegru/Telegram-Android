@@ -2,6 +2,7 @@ package org.telegram.ui.Cells;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.BlendMode;
 import android.graphics.Canvas;
 import android.graphics.LinearGradient;
@@ -32,6 +33,8 @@ import org.telegram.ui.Components.MotionBackgroundDrawable;
 import org.telegram.ui.Components.RadialProgress2;
 
 import java.io.File;
+
+import ru.dahl.messenger.DefaultWallpapersHelper;
 
 public class PatternCell extends BackupImageView implements DownloadController.FileDownloadProgressListener {
 
@@ -96,8 +99,14 @@ public class PatternCell extends BackupImageView implements DownloadController.F
     public void setPattern(TLRPC.TL_wallPaper wallPaper) {
         currentPattern = wallPaper;
         if (wallPaper != null) {
-            TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(wallPaper.document.thumbs, AndroidUtilities.dp(SIZE));
-            setImage(ImageLocation.getForDocument(thumb, wallPaper.document), SIZE + "_" + SIZE, null, null, "png", 0, 1, wallPaper);
+            if(wallPaper.document.localPath != null){
+                int size = AndroidUtilities.dp(SIZE * 1.7f);
+                String cropped = DefaultWallpapersHelper.getCroppedBitmapPath(wallPaper.document.localPath, size, size, false);
+                setImage(cropped,SIZE + "_" + SIZE, null);
+            }else {
+                TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(wallPaper.document.thumbs, AndroidUtilities.dp(SIZE));
+                setImage(ImageLocation.getForDocument(thumb, wallPaper.document), SIZE + "_" + SIZE, null, null, "png", 0, 1, wallPaper);
+            }
         } else {
             setImageDrawable(null);
         }
@@ -137,7 +146,11 @@ public class PatternCell extends BackupImageView implements DownloadController.F
                 if (TextUtils.isEmpty(fileName)) {
                     return;
                 }
-                path = FileLoader.getInstance(currentAccount).getPathToAttach(wallPaper.document, true);
+                if(wallPaper.document.localPath != null){
+                    path = new File((wallPaper.document.localPath));
+                }else {
+                    path = FileLoader.getInstance(currentAccount).getPathToAttach(wallPaper.document, true);
+                }
             } else {
                 MediaController.SearchImage wallPaper = (MediaController.SearchImage) image;
                 if (wallPaper.photo != null) {

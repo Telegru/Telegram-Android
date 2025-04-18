@@ -10,6 +10,9 @@ package org.telegram.ui;
 
 import static org.telegram.messenger.AndroidUtilities.dp;
 import static org.telegram.messenger.LocaleController.getString;
+import static org.telegram.ui.ChannelMonetizationLayout.replaceTON;
+import static org.telegram.ui.Stars.StarsIntroActivity.formatStarsAmount;
+import static org.telegram.ui.Stars.StarsIntroActivity.formatStarsAmountShort;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -67,7 +70,6 @@ import org.telegram.tgnet.tl.TL_bots;
 import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
-import org.telegram.ui.ActionBar.ActionBarPopupWindow;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.BottomSheet;
@@ -77,7 +79,6 @@ import org.telegram.ui.Cells.HeaderCell;
 import org.telegram.ui.Cells.RadioButtonCell;
 import org.telegram.ui.Cells.ShadowSectionCell;
 import org.telegram.ui.Cells.TextCell;
-import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.Cells.TextDetailCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Cells.TextSettingsCell;
@@ -101,10 +102,17 @@ import org.telegram.ui.Components.SizeNotifierFrameLayout;
 import org.telegram.ui.Components.UndoView;
 import org.telegram.ui.Stars.BotStarsActivity;
 import org.telegram.ui.Stars.BotStarsController;
+import org.telegram.ui.Stars.StarsIntroActivity;
+import org.telegram.ui.bots.AffiliateProgramFragment;
+import org.telegram.ui.bots.BotVerifySheet;
+import org.telegram.ui.bots.ChannelAffiliateProgramsFragment;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 
 public class ChatEditActivity extends BaseFragment implements ImageUpdater.ImageUpdaterDelegate, NotificationCenter.NotificationCenterDelegate {
@@ -145,12 +153,14 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
     private TextInfoPrivacyCell stickersInfoCell;
 
     private LinearLayout infoContainer;
+    private LinearLayout balanceContainer;
     private TextCell membersCell;
     private TextCell memberRequestsCell;
     private TextCell inviteLinksCell;
     private TextCell adminCell;
     private TextCell blockCell;
     private TextCell logCell;
+    private TextCell channelAffiliateProgramsCell;
     private TextCell statsAndBoosts;
     private TextCell setAvatarCell;
     private ShadowSectionCell infoSectionCell;
@@ -160,17 +170,26 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
     private ShadowSectionCell deleteInfoCell;
 
     private TextCell publicLinkCell;
-    private TextCell balanceCell;
+    private TextCell tonBalanceCell;
+    private TextCell starsBalanceCell;
+    private TextCell botAffiliateProgramCell;
     private TextCell editIntroCell;
     private TextCell editCommandsCell;
     private TextCell changeBotSettingsCell;
     private TextInfoPrivacyCell botInfoCell;
+
+    private TextInfoPrivacyCell verifyInfoCell;
+    private TextCell verifyCell;
 
     private TLRPC.FileLocation avatar;
 
     private long chatId;
     private TLRPC.Chat currentChat;
     private TLRPC.ChatFull info;
+
+    private TLRPC.TL_chatAdminRights chatAdminRights;
+    private TLRPC.TL_chatBannedRights chatBannedRights;
+    private TLRPC.TL_chatBannedRights chatDefaultBannedRights;
 
     private long userId;
     private TLRPC.User currentUser;
@@ -196,7 +215,7 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
     private PhotoViewer.PhotoViewerProvider provider = new PhotoViewer.EmptyPhotoViewerProvider() {
 
         @Override
-        public PhotoViewer.PlaceProviderObject getPlaceForPhoto(MessageObject messageObject, TLRPC.FileLocation fileLocation, int index, boolean needPreview) {
+        public PhotoViewer.PlaceProviderObject getPlaceForPhoto(MessageObject messageObject, TLRPC.FileLocation fileLocation, int index, boolean needPreview, boolean closing) {
             if (fileLocation == null) {
                 return null;
             }
@@ -338,6 +357,10 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
         }
 
         if (currentChat != null) {
+            chatAdminRights = TLRPC.TL_chatAdminRights.clone(currentChat.admin_rights);
+            chatBannedRights = TLRPC.TL_chatBannedRights.clone(currentChat.banned_rights);
+            chatDefaultBannedRights = TLRPC.TL_chatBannedRights.clone(currentChat.default_banned_rights);
+
             avatarDrawable.setInfo(5, currentChat.title, null);
             isChannel = ChatObject.isChannel(currentChat) && !currentChat.megagroup;
 //            signMessages = currentChat.signatures;
@@ -345,6 +368,7 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
             canForum = userId == 0 && (forum || Math.max(info == null ? 0 : info.participants_count, currentChat.participants_count) >= getMessagesController().forumUpgradeParticipantsMin) && (info == null || info.linked_chat_id == 0);
             NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.chatInfoDidLoad);
             NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.chatAvailableReactionsUpdated);
+            NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.channelConnectedBotsUpdate);
         } else {
             avatarDrawable.setInfo(5, currentUser.first_name, null);
             isChannel = false;
@@ -359,6 +383,8 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
         imageUpdater.parentFragment = this;
         imageUpdater.setDelegate(this);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.updateInterfaces);
+        NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.dialogDeleted);
+        NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.channelRightsUpdated);
 
         if (info != null) {
             loadLinksCount();
@@ -390,6 +416,7 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
         if (currentChat != null) {
             NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.chatInfoDidLoad);
             NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.chatAvailableReactionsUpdated);
+            NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.channelConnectedBotsUpdate);
         } else {
             NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.userInfoDidLoad);
             if (currentUser.bot) {
@@ -397,6 +424,8 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
             }
         }
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.updateInterfaces);
+        NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.dialogDeleted);
+        NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.channelRightsUpdated);
         if (nameTextView != null) {
             nameTextView.onDestroy();
         }
@@ -868,7 +897,7 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
                     if (info != null && info.location instanceof TLRPC.TL_channelLocation) {
                         fragment.setInitialLocation((TLRPC.TL_channelLocation) info.location);
                     }
-                    fragment.setDelegate((location, live, notify, scheduleDate) -> {
+                    fragment.setDelegate((location, live, notify, scheduleDate, payStars) -> {
                         TLRPC.TL_channelLocation channelLocation = new TLRPC.TL_channelLocation();
                         channelLocation.address = location.address;
                         channelLocation.geo_point = location.geo;
@@ -1005,7 +1034,9 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
                             text = AndroidUtilities.replaceTags(LocaleController.formatPluralString("ChannelTopicsForbidden", getMessagesController().forumUpgradeParticipantsMin));
                         }
                         BulletinFactory.of(this).createSimpleBulletin(R.raw.topics, text).show();
-                        frameLayout.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+                        try {
+                            frameLayout.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+                        } catch (Exception ignored) {}
                         return;
                     }
                     forum = !forum;
@@ -1112,6 +1143,14 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
                 });
             }
 
+            channelAffiliateProgramsCell = new TextCell(context);
+            channelAffiliateProgramsCell.setTextAndIcon(ChatEditActivity.applyNewSpan(LocaleController.getString(R.string.ChannelAffiliatePrograms)), R.drawable.menu_feature_premium, false);
+            channelAffiliateProgramsCell.setBackground(Theme.getSelectorDrawable(false));
+            channelAffiliateProgramsCell.setOnClickListener(v -> {
+                presentFragment(new ChannelAffiliateProgramsFragment(-chatId));
+            });
+            channelAffiliateProgramsCell.setVisibility(View.GONE);
+
             if (ChatObject.isChannel(currentChat) || currentChat.gigagroup) {
                 logCell = new TextCell(context);
                 logCell.setTextAndIcon(LocaleController.getString(R.string.EventLog), R.drawable.msg_log, false);
@@ -1153,6 +1192,15 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
             if (logCell != null) {
                 infoContainer.addView(logCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
             }
+            if (channelAffiliateProgramsCell != null) {
+                infoContainer.addView(channelAffiliateProgramsCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+            }
+            if (channelAffiliateProgramsCell != null && getMessagesController().starrefConnectAllowed && ChatObject.isChannelAndNotMegaGroup(currentChat)) {
+                channelAffiliateProgramsCell.setVisibility(View.VISIBLE);
+            }
+            if (logCell != null) {
+                logCell.setNeedDivider(channelAffiliateProgramsCell != null && channelAffiliateProgramsCell.getVisibility() == View.VISIBLE);
+            }
         }
 
         if (currentUser != null) {
@@ -1166,31 +1214,22 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
                 presentFragment(new ChangeUsernameActivity(args));
             });
 
-            if (currentUser.bot && currentUser.bot_can_edit) {
-                balanceCell = new TextCell(context);
-                balanceCell.setBackground(Theme.getSelectorDrawable(false));
-                balanceCell.setPrioritizeTitleOverValue(true);
-                infoContainer.addView(balanceCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
-                BotStarsController c = BotStarsController.getInstance(currentAccount);
-                balanceCell.setOnClickListener(v -> {
-                    if (!c.isBalanceAvailable(userId))
-                        return;
-                    presentFragment(new BotStarsActivity(userId));
-                });
-                if (!c.isBalanceAvailable(userId)) {
-                    SpannableStringBuilder loadingStr = new SpannableStringBuilder("x");
-                    loadingStr.setSpan(new LoadingSpan(balanceCell.valueTextView, dp(30)), 0, loadingStr.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    balanceCell.setTextAndValueAndIcon(getString(R.string.BotBalance), loadingStr, R.drawable.menu_premium_main, false);
-                } else {
-                    balanceCell.setTextAndValueAndIcon(getString(R.string.BotBalance), LocaleController.formatNumber(c.getBalance(userId), ' '), R.drawable.menu_premium_main, false);
-                }
-                balanceCell.setVisibility(c.hasStars(userId) ? View.VISIBLE : View.GONE);
-            }
             updatePublicLinksCount();
 
-            ActionBarPopupWindow.GapView gap = new ActionBarPopupWindow.GapView(context, getResourceProvider(), Theme.key_windowBackgroundGray);
-            gap.setTag(R.id.fit_width_tag, 1);
-            infoContainer.addView(gap, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 8));
+            botAffiliateProgramCell = new TextCell(context);
+            botAffiliateProgramCell.setBackground(Theme.getSelectorDrawable(false));
+            botAffiliateProgramCell.setTextAndValueAndIcon(applyNewSpan(getString(R.string.AffiliateProgramBot)), "", R.drawable.msg_shareout, true);
+            infoContainer.addView(botAffiliateProgramCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+            botAffiliateProgramCell.setOnClickListener(v -> {
+                presentFragment(new AffiliateProgramFragment(userId));
+            });
+            botAffiliateProgramCell.setDrawLoading(userInfo == null, 45, false);
+            if (userInfo != null) {
+                botAffiliateProgramCell.setValue(userInfo.starref_program == null ? getString(R.string.AffiliateProgramBotOff) : String.format(Locale.US, "%.1f%%", userInfo.starref_program.commission_permille / 10.0f), false);
+            }
+            if (!getMessagesController().starrefProgramAllowed) {
+                botAffiliateProgramCell.setVisibility(View.GONE);
+            }
 
             editIntroCell = new TextCell(context);
             editIntroCell.setBackground(Theme.getSelectorDrawable(false));
@@ -1221,7 +1260,7 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
                 infoSectionCell = new ShadowSectionCell(context);
                 linearLayout1.addView(infoSectionCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
             }
-        } else {
+        } else if (currentUser != null) {
             botInfoCell = new TextInfoPrivacyCell(context);
             String str = getString(R.string.BotManageInfo);
             SpannableString span = SpannableString.valueOf(str);
@@ -1243,9 +1282,96 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
             botInfoCell.setBackground(Theme.getThemedDrawableByKey(getContext(), R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
             botInfoCell.setText(span);
             linearLayout1.addView(botInfoCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+
+            verifyCell = new TextCell(context);
+            verifyCell.setBackground(Theme.getSelectorDrawable(true));
+            verifyCell.setTextAndIcon(getString(R.string.BotVerifyAccounts), R.drawable.menu_factcheck, false);
+            verifyCell.setColors(Theme.key_windowBackgroundWhiteBlueText4, Theme.key_windowBackgroundWhiteBlueText4);
+            linearLayout1.addView(verifyCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+            verifyCell.setOnClickListener(v -> BotVerifySheet.openVerify(currentAccount, userId, userInfo.bot_info.verifier_settings));
+
+            verifyInfoCell = new TextInfoPrivacyCell(context);
+            verifyInfoCell.setFixedSize(12);
+            verifyInfoCell.setBackground(Theme.getThemedDrawableByKey(getContext(), R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
+            linearLayout1.addView(verifyInfoCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+
+            verifyCell.setVisibility(userInfo != null && userInfo.bot_info != null && userInfo.bot_info.verifier_settings != null ? View.VISIBLE : View.GONE);
+            verifyInfoCell.setVisibility(userInfo != null && userInfo.bot_info != null && userInfo.bot_info.verifier_settings != null ? View.VISIBLE : View.GONE);
+
+            if (currentUser.bot && currentUser.bot_can_edit) {
+
+                balanceContainer = new LinearLayout(context);
+                balanceContainer.setOrientation(LinearLayout.VERTICAL);
+                balanceContainer.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+                linearLayout1.addView(balanceContainer, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+
+                HeaderCell headerCell = new HeaderCell(context);
+                headerCell.setText(getString(R.string.BotBalance));
+                balanceContainer.addView(headerCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+
+                tonBalanceCell = new TextCell(context);
+                tonBalanceCell.setBackground(Theme.getSelectorDrawable(false));
+                tonBalanceCell.setPrioritizeTitleOverValue(true);
+                balanceContainer.addView(tonBalanceCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+                BotStarsController c = BotStarsController.getInstance(currentAccount);
+                tonBalanceCell.setOnClickListener(v -> {
+                    if (!c.isStarsBalanceAvailable(userId))
+                        return;
+                    presentFragment(new BotStarsActivity(BotStarsActivity.TYPE_TON, userId));
+                });
+                if (!c.isTONBalanceAvailable(userId)) {
+                    SpannableStringBuilder loadingStr = new SpannableStringBuilder("x");
+                    loadingStr.setSpan(new LoadingSpan(tonBalanceCell.valueTextView, dp(30)), 0, loadingStr.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    tonBalanceCell.setTextAndValueAndIcon(getString(R.string.BotBalanceTON), loadingStr, R.drawable.msg_ton, false);
+                } else {
+                    long ton_balance = c.getTONBalance(userId);
+                    SpannableStringBuilder ssb = new SpannableStringBuilder();
+                    if (ton_balance > 0) {
+                        if (ton_balance / 1_000_000_000.0 > 1000.0) {
+                            ssb.append("TON ").append(AndroidUtilities.formatWholeNumber((int) (ton_balance / 1_000_000_000.0), 0));
+                        } else {
+                            DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US);
+                            symbols.setDecimalSeparator('.');
+                            DecimalFormat formatterTON = new DecimalFormat("#.##", symbols);
+                            formatterTON.setMinimumFractionDigits(2);
+                            formatterTON.setMaximumFractionDigits(3);
+                            formatterTON.setGroupingUsed(false);
+                            ssb.append("TON ").append(formatterTON.format(ton_balance / 1_000_000_000.0));
+                        }
+                    }
+                    tonBalanceCell.setTextAndValueAndIcon(getString(R.string.BotBalanceTON), ssb, R.drawable.msg_ton, true);
+                }
+                tonBalanceCell.setVisibility(c.botHasTON(userId) ? View.VISIBLE : View.GONE);
+
+                starsBalanceCell = new TextCell(context);
+                starsBalanceCell.setBackground(Theme.getSelectorDrawable(false));
+                starsBalanceCell.setPrioritizeTitleOverValue(true);
+                balanceContainer.addView(starsBalanceCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+                starsBalanceCell.setOnClickListener(v -> {
+                    if (!c.isStarsBalanceAvailable(userId))
+                        return;
+                    presentFragment(new BotStarsActivity(BotStarsActivity.TYPE_STARS, userId));
+                });
+                if (!c.isStarsBalanceAvailable(userId)) {
+                    SpannableStringBuilder loadingStr = new SpannableStringBuilder("x");
+                    loadingStr.setSpan(new LoadingSpan(starsBalanceCell.valueTextView, dp(30)), 0, loadingStr.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    starsBalanceCell.setTextAndValueAndIcon(getString(R.string.BotBalanceStars), loadingStr, R.drawable.menu_premium_main, false);
+                } else {
+
+                    starsBalanceCell.setTextAndValueAndIcon(getString(R.string.BotBalanceStars), c.getBotStarsBalance(userId).amount <= 0?"":StarsIntroActivity.replaceStarsWithPlain(TextUtils.concat("XTR", formatStarsAmountShort(c.getBotStarsBalance(userId), .85f, ' ')), .85f), R.drawable.menu_premium_main, false);
+                }
+                starsBalanceCell.setVisibility(c.botHasStars(userId) ? View.VISIBLE : View.GONE);
+
+                TextInfoPrivacyCell gap = new TextInfoPrivacyCell(context, getResourceProvider());
+                gap.setBackground(Theme.getThemedDrawableByKey(context, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
+                gap.setTag(R.id.fit_width_tag, 1);
+                linearLayout1.addView(gap, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 8));
+
+                balanceContainer.setVisibility(starsBalanceCell.getVisibility() == View.VISIBLE || tonBalanceCell.getVisibility() == View.VISIBLE ? View.VISIBLE : View.GONE);
+            }
         }
 
-        if (currentUser == null && currentChat.creator) {
+        if (currentChat != null && currentChat.creator) {
             deleteContainer = new FrameLayout(context);
             deleteContainer.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
             linearLayout1.addView(deleteContainer, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
@@ -1261,15 +1387,17 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
                 deleteCell.setText(getString("DeleteAndExitButton", R.string.DeleteAndExitButton), false);
             }
             deleteContainer.addView(deleteCell, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
-            deleteCell.setOnClickListener(v -> AlertsCreator.createClearOrDeleteDialogAlert(ChatEditActivity.this, false, true, false, currentChat, null, false, true, false, (param) -> {
-                if (AndroidUtilities.isTablet()) {
-                    getNotificationCenter().postNotificationName(NotificationCenter.closeChats, -chatId);
-                } else {
-                    getNotificationCenter().postNotificationName(NotificationCenter.closeChats);
-                }
-                finishFragment();
-                getNotificationCenter().postNotificationName(NotificationCenter.needDeleteDialog, -currentChat.id, null, currentChat, param);
-            }, null));
+            deleteCell.setOnClickListener(v -> {
+                AlertsCreator.createClearOrDeleteDialogAlert(ChatEditActivity.this, false, true, false, currentChat, null, false, true, false, (param) -> {
+                    if (AndroidUtilities.isTablet()) {
+                        getNotificationCenter().postNotificationName(NotificationCenter.closeChats, -chatId);
+                    } else {
+                        getNotificationCenter().postNotificationName(NotificationCenter.closeChats);
+                    }
+                    finishFragment();
+                    getNotificationCenter().postNotificationName(NotificationCenter.needDeleteDialog, -currentChat.id, null, currentChat, param);
+                }, null);
+            });
 
             deleteInfoCell = new ShadowSectionCell(context);
             deleteInfoCell.setBackground(Theme.getThemedDrawableByKey(context, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
@@ -1287,7 +1415,7 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
         undoView = new UndoView(context);
         sizeNotifierFrameLayout.addView(undoView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM | Gravity.LEFT, 8, 0, 8, 8));
 
-        nameTextView.setText(Emoji.replaceEmoji(currentUser != null ? ContactsController.formatName(currentUser) : currentChat.title, nameTextView.getEditText().getPaint().getFontMetricsInt(), dp(16), true));
+        nameTextView.setText(Emoji.replaceEmoji(currentUser != null ? ContactsController.formatName(currentUser) : currentChat.title, nameTextView.getEditText().getPaint().getFontMetricsInt(), true));
         nameTextView.setSelection(nameTextView.length());
         if (info != null) {
             descriptionTextView.setText(info.about);
@@ -1298,6 +1426,16 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
         updateFields(true, false);
 
         return fragmentView;
+    }
+
+    public static CharSequence applyNewSpan(String str) {
+        SpannableStringBuilder spannableStringBuilder = new SpannableStringBuilder(str);
+        spannableStringBuilder.append("  d");
+        FilterCreateActivity.NewSpan span = new FilterCreateActivity.NewSpan(false, 10);
+        span.setTypeface(AndroidUtilities.getTypeface("fonts/num.otf"));
+        span.setColor(Theme.getColor(Theme.key_premiumGradient1));
+        spannableStringBuilder.setSpan(span, spannableStringBuilder.length() - 1, spannableStringBuilder.length(), 0);
+        return spannableStringBuilder;
     }
 
     private void updatePublicLinksCount() {
@@ -1312,9 +1450,9 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
                 }
             }
 
-            publicLinkCell.setTextAndValueAndIcon(getString(R.string.BotPublicLinks), LocaleController.formatString(R.string.BotPublicLinksCount, usernamesActive, currentUser.usernames.size()), R.drawable.msg_link2, balanceCell != null && balanceCell.getVisibility() == View.VISIBLE);
+            publicLinkCell.setTextAndValueAndIcon(getString(R.string.BotPublicLinks), LocaleController.formatString(R.string.BotPublicLinksCount, usernamesActive, currentUser.usernames.size()), R.drawable.msg_link2, true);
         } else {
-            publicLinkCell.setTextAndValueAndIcon(getString(R.string.BotPublicLink), "t.me/" + currentUser.username, R.drawable.msg_link2, balanceCell != null && balanceCell.getVisibility() == View.VISIBLE);
+            publicLinkCell.setTextAndValueAndIcon(getString(R.string.BotPublicLink), "t.me/" + currentUser.username, R.drawable.msg_link2, true);
         }
     }
 
@@ -1371,6 +1509,9 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
         if (PhotoViewer.hasInstance() && PhotoViewer.getInstance().isVisible()) {
             PhotoViewer.getInstance().checkCurrentImageVisibility();
         }
+        if (channelAffiliateProgramsCell != null && getMessagesController().starrefConnectAllowed && ChatObject.isChannelAndNotMegaGroup(currentChat)) {
+            channelAffiliateProgramsCell.setVisibility(View.VISIBLE);
+        }
     }
 
     private void updateCanForum() {
@@ -1409,6 +1550,19 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
             if ((mask & MessagesController.UPDATE_MASK_NAME) != 0) {
                 updatePublicLinksCount();
             }
+        } else if (id == NotificationCenter.channelRightsUpdated) {
+            TLRPC.Chat chat = (TLRPC.Chat) args[0];
+            if (chat != null && chat.id == chatId && (
+                chatAdminRights != null && !chatAdminRights.equals(chat.admin_rights) ||
+                chatBannedRights != null && !chatBannedRights.equals(chat.banned_rights) ||
+                chatDefaultBannedRights != null && !chatDefaultBannedRights.equals(chat.default_banned_rights)
+            )) {
+                if (parentLayout != null && parentLayout.getLastFragment() == this) {
+                    finishFragment();
+                } else {
+                    removeSelfFromStack();
+                }
+            }
         } else if (id == NotificationCenter.chatAvailableReactionsUpdated) {
             long chatId = (long) args[0];
             if (chatId == this.chatId) {
@@ -1420,13 +1574,57 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
             }
         } else if (id == NotificationCenter.botStarsUpdated) {
             if ((long) args[0] == userId) {
-                if (balanceCell != null) {
+                if (starsBalanceCell != null) {
                     BotStarsController c = BotStarsController.getInstance(currentAccount);
-                    balanceCell.setVisibility(c.hasStars(userId) ? View.VISIBLE : View.GONE);
-                    balanceCell.setValue(LocaleController.formatNumber(c.getBalance(userId), ' '), true);
+                    starsBalanceCell.setVisibility(c.botHasStars(userId) ? View.VISIBLE : View.GONE);
+                    starsBalanceCell.setValue(StarsIntroActivity.replaceStarsWithPlain(TextUtils.concat("XTR", formatStarsAmount(c.getBotStarsBalance(userId), .8f, ' ')), .85f), true);
                     if (publicLinkCell != null) {
-                        publicLinkCell.setNeedDivider(c.hasStars(userId));
+                        publicLinkCell.setNeedDivider(c.botHasStars(userId) || c.botHasTON(userId));
                     }
+                    balanceContainer.setVisibility(starsBalanceCell.getVisibility() == View.VISIBLE || tonBalanceCell.getVisibility() == View.VISIBLE ? View.VISIBLE : View.GONE);
+                }
+                if (tonBalanceCell != null) {
+                    BotStarsController c = BotStarsController.getInstance(currentAccount);
+                    tonBalanceCell.setVisibility(c.botHasTON(userId) ? View.VISIBLE : View.GONE);
+                    long ton_balance = c.getTONBalance(userId);
+                    SpannableStringBuilder ssb = new SpannableStringBuilder();
+                    if (ton_balance > 0) {
+                        if (ton_balance / 1_000_000_000.0 > 1000.0) {
+                            ssb.append("TON ").append(AndroidUtilities.formatWholeNumber((int) (ton_balance / 1_000_000_000.0), 0));
+                        } else {
+                            DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US);
+                            symbols.setDecimalSeparator('.');
+                            DecimalFormat formatterTON = new DecimalFormat("#.##", symbols);
+                            formatterTON.setMinimumFractionDigits(2);
+                            formatterTON.setMaximumFractionDigits(3);
+                            formatterTON.setGroupingUsed(false);
+                            ssb.append("TON ").append(formatterTON.format(ton_balance / 1_000_000_000.0));
+                        }
+                    }
+                    tonBalanceCell.setValue(ssb, true);
+                    if (publicLinkCell != null) {
+                        publicLinkCell.setNeedDivider(c.botHasStars(userId) || c.botHasTON(userId));
+                    }
+                    balanceContainer.setVisibility(starsBalanceCell.getVisibility() == View.VISIBLE || tonBalanceCell.getVisibility() == View.VISIBLE ? View.VISIBLE : View.GONE);
+                }
+            }
+        } else if (id == NotificationCenter.userInfoDidLoad) {
+            Long uid = (Long) args[0];
+            if (uid == userId) {
+                setInfo(getMessagesController().getUserFull(userId));
+            }
+        } else if (id == NotificationCenter.channelConnectedBotsUpdate) {
+            Long did = (Long) args[0];
+            if (did == -chatId) {
+
+            }
+        } else if (id == NotificationCenter.dialogDeleted) {
+            long dialogId = (long) args[0];
+            if (-this.chatId == dialogId) {
+                if (parentLayout != null && parentLayout.getLastFragment() == this) {
+                    finishFragment();
+                } else {
+                    removeSelfFromStack();
                 }
             }
         }
@@ -1441,7 +1639,7 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
     }
 
     @Override
-    public void didStartUpload(boolean isVideo) {
+    public void didStartUpload(boolean fromAvatarConstructor, boolean isVideo) {
         if (avatarProgressView == null) {
             return;
         }
@@ -1776,6 +1974,18 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
             if (currentUser == null) {
                 currentUser = userId == 0 ? null : getMessagesController().getUser(userId);
             }
+            if (botAffiliateProgramCell != null) {
+                botAffiliateProgramCell.setDrawLoading(userInfo == null, 45, true);
+                if (userInfo != null) {
+                    botAffiliateProgramCell.setValue(userInfo.starref_program == null ? getString(R.string.AffiliateProgramBotOff) : String.format(Locale.US, "%.1f%%", userInfo.starref_program.commission_permille / 10.0f), false);
+                }
+            }
+            if (verifyCell != null) {
+                verifyCell.setVisibility(userInfo != null && userInfo.bot_info != null && userInfo.bot_info.verifier_settings != null ? View.VISIBLE : View.GONE);
+            }
+            if (verifyInfoCell != null) {
+                verifyInfoCell.setVisibility(userInfo != null && userInfo.bot_info != null && userInfo.bot_info.verifier_settings != null ? View.VISIBLE : View.GONE);
+            }
         }
     }
 
@@ -1789,6 +1999,9 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
             availableReactions = info.available_reactions;
             preloadedReactions.clear();
             preloadedReactions.addAll(ReactionsUtils.startPreloadReactions(currentChat, info));
+            if (channelAffiliateProgramsCell != null && getMessagesController().starrefConnectAllowed && ChatObject.isChannelAndNotMegaGroup(currentChat)) {
+                channelAffiliateProgramsCell.setVisibility(View.VISIBLE);
+            }
         }
     }
 
@@ -1928,7 +2141,7 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
                         } else {
                             count = forum ? 14 : 13;
                         }
-                        blockCell.setTextAndValueAndIcon(getString("ChannelPermissions", R.string.ChannelPermissions), String.format("%d/%d", count, forum ? 14 : 13), animated, R.drawable.msg_permissions, true);
+                        blockCell.setTextAndValueAndIcon(getString(R.string.ChannelPermissions), String.format("%d/%d", count, forum ? 14 : 13), animated, R.drawable.msg_permissions, true);
                     }
                     if (memberRequestsCell != null) {
                         memberRequestsCell.setTextAndValueAndIcon(getString("MemberRequests", R.string.MemberRequests), String.format("%d", info.requests_pending), R.drawable.msg_requests, logCell != null && logCell.getVisibility() == View.VISIBLE);
@@ -1944,7 +2157,7 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
                     if (currentChat.gigagroup) {
                         blockCell.setTextAndIcon(getString("ChannelBlacklist", R.string.ChannelBlacklist), R.drawable.msg_chats_remove, logCell != null && logCell.getVisibility() == View.VISIBLE);
                     } else {
-                        blockCell.setTextAndIcon(getString("ChannelPermissions", R.string.ChannelPermissions), R.drawable.msg_permissions, true);
+                        blockCell.setTextAndIcon(getString(R.string.ChannelPermissions), R.drawable.msg_permissions, true);
                     }
                 }
                 adminCell.setTextAndIcon(getString("ChannelAdministrators", R.string.ChannelAdministrators), R.drawable.msg_admins, true);

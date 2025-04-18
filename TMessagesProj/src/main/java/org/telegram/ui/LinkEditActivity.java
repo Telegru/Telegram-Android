@@ -38,6 +38,7 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.tgnet.tl.TL_stars;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.AdjustPanLayoutHelper;
 import org.telegram.ui.ActionBar.AlertDialog;
@@ -402,7 +403,7 @@ public class LinkEditActivity extends BaseFragment {
                 subPriceView = new TextView(context);
                 subPriceView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
                 subPriceView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText3));
-                subEditPriceCell = new EditTextCell(context, getString(getConnectionsManager().isTestBackend() ? R.string.RequireMonthlyFeePriceHintTest5Minutes : R.string.RequireMonthlyFeePriceHint), false, -1, resourceProvider) {
+                subEditPriceCell = new EditTextCell(context, getString(getConnectionsManager().isTestBackend() ? R.string.RequireMonthlyFeePriceHintTest5Minutes : R.string.RequireMonthlyFeePriceHint), false, false, -1, resourceProvider) {
                     private boolean ignoreTextChanged;
                     @Override
                     protected void onTextChanged(CharSequence newText) {
@@ -569,7 +570,7 @@ public class LinkEditActivity extends BaseFragment {
             @Override public void onTextChanged(CharSequence s, int start, int before, int count) { }
             @Override
             public void afterTextChanged(Editable s) {
-                Emoji.replaceEmoji(s, nameEditText.getPaint().getFontMetricsInt(), (int) nameEditText.getPaint().getTextSize(), false);
+                Emoji.replaceEmoji(s, nameEditText.getPaint().getFontMetricsInt(), false);
             }
         });
         nameEditText.setCursorVisible(false);
@@ -714,7 +715,7 @@ public class LinkEditActivity extends BaseFragment {
 
             if (stars > 0) {
                 req.flags |= 32;
-                req.subscription_pricing = new TLRPC.TL_starsSubscriptionPricing();
+                req.subscription_pricing = new TL_stars.TL_starsSubscriptionPricing();
                 req.subscription_pricing.period = getConnectionsManager().isTestBackend() ? StarsController.PERIOD_5MINUTES : StarsController.PERIOD_MONTHLY;
                 req.subscription_pricing.amount = stars;
             }
@@ -939,7 +940,7 @@ public class LinkEditActivity extends BaseFragment {
             setUsesVisible(!invite.request_needed);
             if (!TextUtils.isEmpty(invite.title)) {
                 SpannableStringBuilder builder = new SpannableStringBuilder(invite.title);
-                Emoji.replaceEmoji(builder, nameEditText.getPaint().getFontMetricsInt(), (int) nameEditText.getPaint().getTextSize(), false);
+                Emoji.replaceEmoji(builder, nameEditText.getPaint().getFontMetricsInt(), false);
                 nameEditText.setText(builder);
             }
 

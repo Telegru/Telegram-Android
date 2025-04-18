@@ -57,7 +57,7 @@ public class ImageWithWavesView extends FrameLayout {
     }
 
     public void setRoundRadius(int value) {
-        backupImageView.setRoundRadius(value);
+        backupImageView.setRoundRadius(value, value, value, value);
     }
 
     public void setShowWaves(boolean showWaves) {

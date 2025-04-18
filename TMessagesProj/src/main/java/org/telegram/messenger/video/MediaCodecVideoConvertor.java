@@ -7,6 +7,7 @@ import android.media.MediaExtractor;
 import android.media.MediaFormat;
 import android.media.MediaMuxer;
 import android.os.Build;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 
@@ -21,6 +22,7 @@ import org.telegram.messenger.VideoEditedInfo;
 import org.telegram.messenger.video.audio_input.AudioInput;
 import org.telegram.messenger.video.audio_input.BlankAudioInput;
 import org.telegram.messenger.video.audio_input.GeneralAudioInput;
+import org.telegram.ui.Stories.recorder.CollageLayout;
 import org.telegram.ui.Stories.recorder.StoryEntry;
 
 import java.io.File;
@@ -61,9 +63,11 @@ public class MediaCodecVideoConvertor {
     }
 
     @TargetApi(18)
-    private boolean convertVideoInternal(ConvertVideoParams convertVideoParams,
-                                         boolean increaseTimeout,
-                                         int triesCount) {
+    private boolean convertVideoInternal(
+        ConvertVideoParams convertVideoParams,
+        boolean increaseTimeout,
+        int triesCount
+    ) {
         String videoPath = convertVideoParams.videoPath;
         File cacheFile = convertVideoParams.cacheFile;
         int rotationValue = convertVideoParams.rotationValue;
@@ -967,7 +971,6 @@ public class MediaCodecVideoConvertor {
         if (BuildVars.LOGS_ENABLED) {
             FileLog.d("compression completed time=" + timeLeft + " needCompress=" + needCompress + " w=" + resultWidth + " h=" + resultHeight + " bitrate=" + bitrate + " file size=" + AndroidUtilities.formatFileSize(cacheFile.length()) + " encoder_name=" + selectedEncoderName);
         }
-
         return error;
     }
 
@@ -975,7 +978,13 @@ public class MediaCodecVideoConvertor {
         if (soundInfos == null) return;
         for (int i = 0; i < soundInfos.size(); i++) {
             MixedSoundInfo soundInfo = soundInfos.get(i);
-            GeneralAudioInput secondAudio = new GeneralAudioInput(soundInfo.audioFile);
+            GeneralAudioInput secondAudio;
+            try {
+                secondAudio = new GeneralAudioInput(soundInfo.audioFile);
+            } catch (Exception e) {
+                FileLog.e(e);
+                continue;
+            }
             secondAudio.setVolume(soundInfo.volume);
             long startTimeLocal = 0;
             if (soundInfo.startTime > 0) {
@@ -1444,6 +1453,8 @@ public class MediaCodecVideoConvertor {
         boolean isDark;
         long wallpaperPeerId;
         boolean isSticker;
+        CollageLayout collage;
+        ArrayList<VideoEditedInfo.Part> collageParts;
 
         private ConvertVideoParams() {
 
@@ -1496,6 +1507,8 @@ public class MediaCodecVideoConvertor {
             params.messageVideoMaskPath = info.messageVideoMaskPath;
             params.backgroundPath = info.backgroundPath;
             params.isSticker = info.isSticker;
+            params.collage = info.collage;
+            params.collageParts = info.collageParts;
             return params;
         }
     }

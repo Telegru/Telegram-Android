@@ -50,6 +50,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 
+import ru.dahl.messenger.settings.DahlSettings;
+
 public class SharedConfig {
     /**
      * V2: Ping and check time serialized
@@ -305,6 +307,7 @@ public class SharedConfig {
     public static boolean playOrderReversed;
     public static boolean hasCameraCache;
     public static boolean showNotificationsForAllAccounts = true;
+    public static boolean debugVideoQualities = false;
     public static int repeatMode;
     public static boolean allowBigEmoji;
     public static boolean useSystemEmoji;
@@ -318,7 +321,6 @@ public class SharedConfig {
     public static int emojiInteractionsHintCount;
     public static int dayNightThemeSwitchHintCount;
     public static int callEncryptionHintDisplayedCount;
-    public static boolean botTabs3DEffect;
 
     public static TLRPC.TL_help_appUpdate pendingAppUpdate;
     public static int pendingAppUpdateBuildVersion;
@@ -620,7 +622,8 @@ public class SharedConfig {
             sortFilesByName = preferences.getBoolean("sortFilesByName", false);
             noSoundHintShowed = preferences.getBoolean("noSoundHintShowed", false);
             directShareHash = preferences.getString("directShareHash2", null);
-            useThreeLinesLayout = preferences.getBoolean("useThreeLinesLayout", false);
+//            useThreeLinesLayout = preferences.getBoolean("useThreeLinesLayout", false);
+            useThreeLinesLayout = DahlSettings.getChatListLines() == 3;
             archiveHidden = preferences.getBoolean("archiveHidden", false);
             distanceSystemType = preferences.getInt("distanceSystemType", 0);
             keepMedia = preferences.getInt("keep_media", CacheByChatsController.KEEP_MEDIA_ONE_MONTH);
@@ -662,7 +665,7 @@ public class SharedConfig {
             photoViewerBlur = preferences.getBoolean("photoViewerBlur", true);
             multipleReactionsPromoShowed = preferences.getBoolean("multipleReactionsPromoShowed", false);
             callEncryptionHintDisplayedCount = preferences.getInt("callEncryptionHintDisplayedCount", 0);
-            botTabs3DEffect = preferences.getBoolean("botTabs3DEffect", true);
+            debugVideoQualities = preferences.getBoolean("debugVideoQualities", false);
 
             loadDebugConfig(preferences);
 
@@ -670,14 +673,6 @@ public class SharedConfig {
             showNotificationsForAllAccounts = preferences.getBoolean("AllAccounts", true);
 
             configLoaded = true;
-
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT && debugWebView) {
-                    WebView.setWebContentsDebuggingEnabled(true);
-                }
-            } catch (Exception e) {
-                FileLog.e(e);
-            }
         }
     }
 
@@ -1092,13 +1087,6 @@ public class SharedConfig {
         editor.apply();
     }
 
-    public static void setBotTabs3DEffect(boolean value) {
-        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putBoolean("botTabs3DEffect", botTabs3DEffect = value);
-        editor.apply();
-    }
-
     public static void toggleLoopStickers() {
         LiteMode.toggleFlag(LiteMode.FLAG_ANIMATED_STICKERS_CHAT);
     }
@@ -1262,6 +1250,14 @@ public class SharedConfig {
         SharedPreferences preferences = MessagesController.getGlobalMainSettings();
         SharedPreferences.Editor editor = preferences.edit();
         editor.putBoolean("adaptableBrowser", adaptableColorInBrowser);
+        editor.apply();
+    }
+
+    public static void toggleDebugVideoQualities() {
+        debugVideoQualities = !debugVideoQualities;
+        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean("debugVideoQualities", debugVideoQualities);
         editor.apply();
     }
 
@@ -1452,6 +1448,9 @@ public class SharedConfig {
             ProxyInfo info = currentProxy = new ProxyInfo(proxyAddress, proxyPort, proxyUsername, proxyPassword, proxySecret);
             proxyList.add(0, info);
         }
+
+//        ProxyInfo info = new ProxyInfo();
+//        proxyList.add(0, info);
     }
 
     public static void saveProxyList() {

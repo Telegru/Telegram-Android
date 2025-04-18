@@ -84,7 +84,7 @@ public class RLottieDrawable extends BitmapDrawable implements Animatable, Bitma
     private int finishFrame;
 
     private View currentParentView;
-    private ArrayList<ImageReceiver> parentViews = new ArrayList<>();
+    private final ArrayList<ImageReceiver> parentViews = new ArrayList<>();
 
     protected int isDice;
     protected int diceSwitchFramesCount = -1;
@@ -748,6 +748,10 @@ public class RLottieDrawable extends BitmapDrawable implements Animatable, Bitma
         return currentFrame;
     }
 
+    public float getProgress() {
+        return (float) currentFrame / metaData[0];
+    }
+
     public int getCustomEndFrame() {
         return customEndFrame;
     }
@@ -1246,7 +1250,9 @@ public class RLottieDrawable extends BitmapDrawable implements Animatable, Bitma
                 if (vibrationPattern != null && currentParentView != null && allowVibration) {
                     Integer force = vibrationPattern.get(currentFrame - 1);
                     if (force != null) {
-                        currentParentView.performHapticFeedback(force == 1 ? HapticFeedbackConstants.LONG_PRESS : HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                        try {
+                            currentParentView.performHapticFeedback(force == 1 ? HapticFeedbackConstants.LONG_PRESS : HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                        } catch (Exception ignored) {}
                     }
                 }
                 setCurrentFrame(now, timeDiff, timeCheck, false);

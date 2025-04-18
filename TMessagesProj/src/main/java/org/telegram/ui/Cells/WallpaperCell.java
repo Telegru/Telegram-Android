@@ -13,6 +13,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.BlendMode;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -22,6 +23,7 @@ import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -41,6 +43,8 @@ import org.telegram.ui.Components.CheckBox;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.MotionBackgroundDrawable;
 import org.telegram.ui.WallpapersListActivity;
+
+import ru.dahl.messenger.DefaultWallpapersHelper;
 
 public class WallpaperCell extends FrameLayout {
 
@@ -175,19 +179,29 @@ public class WallpaperCell extends FrameLayout {
                             }
                         } else {
                             imageView.getImageReceiver().setGradientBitmap(motionBackgroundDrawable.getBitmap());
+                            if(wallPaper.isDahlWallpaper){
+                                imageView.getImageReceiver().setAlpha(0.3f);
+                            }
                         }
                         patternColor = MotionBackgroundDrawable.getPatternColor(wallPaper.color, wallPaper.gradientColor1, wallPaper.gradientColor2, wallPaper.gradientColor3);
                     } else {
                         patternColor = AndroidUtilities.getPatternColor(wallPaper.color);
                     }
-                    if (Theme.DEFAULT_BACKGROUND_SLUG.equals(wallPaper.slug)) {
-                        if (wallPaper.defaultCache == null) {
-                            wallPaper.defaultCache = SvgHelper.getBitmap(R.raw.default_pattern, 100, 180, Color.BLACK);
+//                    if (Theme.DEFAULT_BACKGROUND_SLUG.equals(wallPaper.slug)) {
+//                        if (wallPaper.defaultCache == null) {
+//                            wallPaper.defaultCache = SvgHelper.getBitmap(R.raw.dahl_wallpaper_russia, 100, 180, Color.BLACK);
+//                        }
+//                        imageView.setImageBitmap(wallPaper.defaultCache);
+//                        imageView.getImageReceiver().setAlpha(Math.abs(wallPaper.intensity));
+//                    } else
+                    if (wallPaper.path != null) {
+                        if(wallPaper.isDahlWallpaper) {
+                            int size = AndroidUtilities.dp(imageSide * 1.5f);
+                            String cropped = DefaultWallpapersHelper.getCroppedBitmapPath(wallPaper.path.getAbsolutePath(), size, size, false);
+                            imageView.setImage(cropped, imageFilter, null);
+                        }else{
+                            imageView.setImage(wallPaper.path.getAbsolutePath(), imageFilter, null);
                         }
-                        imageView.setImageBitmap(wallPaper.defaultCache);
-                        imageView.getImageReceiver().setAlpha(Math.abs(wallPaper.intensity));
-                    } else if (wallPaper.path != null) {
-                        imageView.setImage(wallPaper.path.getAbsolutePath(), imageFilter, null);
                     } else {
                         TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(wallPaper.pattern.document.thumbs, 100);
                         long size = thumb != null ? thumb.size : wallPaper.pattern.document.size;

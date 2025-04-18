@@ -45,11 +45,13 @@ import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.Adapters.DrawerLayoutAdapter;
 import org.telegram.ui.Components.ForegroundDetector;
 import org.telegram.ui.Components.Premium.boosts.BoostRepository;
+import org.telegram.ui.IUpdateButton;
 import org.telegram.ui.IUpdateLayout;
 import org.telegram.ui.LauncherIconController;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Locale;
 
 public class ApplicationLoader extends Application {
 
@@ -159,7 +161,7 @@ public class ApplicationLoader extends Application {
         } catch (Exception e) {
             FileLog.e(e);
         }
-        return new File("/data/data/org.telegram.messenger/files");
+        return new File("/data/data/ru.dahl.messenger/files");
     }
 
     public static void postInitApplication() {
@@ -267,10 +269,27 @@ public class ApplicationLoader extends Application {
         if (BuildVars.LOGS_ENABLED) {
             FileLog.d("app start time = " + (startTime = SystemClock.elapsedRealtime()));
             try {
-                FileLog.d("buildVersion = " + ApplicationLoader.applicationContext.getPackageManager().getPackageInfo(ApplicationLoader.applicationContext.getPackageName(), 0).versionCode);
+                final PackageInfo info = ApplicationLoader.applicationContext.getPackageManager().getPackageInfo(ApplicationLoader.applicationContext.getPackageName(), 0);
+                final String abi;
+                switch (info.versionCode % 10) {
+                    case 1:
+                    case 2:
+                        abi = "store bundled " + Build.CPU_ABI + " " + Build.CPU_ABI2;
+                        break;
+                    default:
+                    case 9:
+                        if (ApplicationLoader.isStandaloneBuild()) {
+                            abi = "direct " + Build.CPU_ABI + " " + Build.CPU_ABI2;
+                        } else {
+                            abi = "universal " + Build.CPU_ABI + " " + Build.CPU_ABI2;
+                        }
+                        break;
+                }
+                FileLog.d("buildVersion = " + String.format(Locale.US, "v%s (%d[%d]) %s", info.versionName, info.versionCode / 10, info.versionCode % 10, abi));
             } catch (Exception e) {
                 FileLog.e(e);
             }
+            FileLog.d("device = manufacturer=" + Build.MANUFACTURER + ", device=" + Build.DEVICE + ", model=" + Build.MODEL + ", product=" + Build.PRODUCT);
         }
         if (applicationContext == null) {
             applicationContext = getApplicationContext();
@@ -596,6 +615,10 @@ public class ApplicationLoader extends Application {
     }
 
     public IUpdateLayout takeUpdateLayout(Activity activity, ViewGroup sideMenu, ViewGroup sideMenuContainer) {
+        return null;
+    }
+
+    public IUpdateButton takeUpdateButton(Context context) {
         return null;
     }
 

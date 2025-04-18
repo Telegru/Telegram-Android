@@ -112,6 +112,8 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
     public static final int VIEW_TYPE_ROUND_GROUP_CHECKBOX = 41;
     public static final int VIEW_TYPE_ANIMATED_HEADER = 42;
 
+    public static final int VIEW_TYPE_ICON_TEXT_CHECK_2 = 99;
+
     protected final RecyclerListView listView;
     private final Context context;
     private final int currentAccount;
@@ -176,6 +178,7 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
         currentWhiteSection.end = -1;
         whiteSections.add(currentWhiteSection);
     }
+
     public void whiteSectionEnd() {
         if (currentWhiteSection != null) {
             currentWhiteSection.end = Math.max(0, items.size() - 1);
@@ -208,6 +211,7 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
 
     private int orderChangedId;
     private boolean orderChanged;
+
     public void swapElements(int fromPosition, int toPosition) {
         if (onReordered == null) return;
         int fromPositionReorderId = getReorderSectionId(fromPosition);
@@ -295,6 +299,17 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
         }
     }
 
+    public void updateWithoutNotify() {
+        oldItems.clear();
+        oldItems.addAll(items);
+        items.clear();
+        whiteSections.clear();
+        reorderSections.clear();
+        if (fillItems != null) {
+            fillItems.run(items, this);
+        }
+    }
+
     public boolean shouldApplyBackground(int viewType) {
         if (!applyBackground) return false;
         if (viewType >= UItem.factoryViewTypeStartsWith) {
@@ -339,6 +354,7 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
             case VIEW_TYPE_USER_CHECKBOX:
             case VIEW_TYPE_SWITCH:
             case VIEW_TYPE_EXPANDABLE_SWITCH:
+            case VIEW_TYPE_ICON_TEXT_CHECK_2:
                 return true;
         }
         return false;
@@ -522,6 +538,9 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
             case VIEW_TYPE_EXPANDABLE_SWITCH:
                 view = new TextCheckCell2(context);
                 break;
+            case VIEW_TYPE_ICON_TEXT_CHECK_2:
+                view = new TextCell(context, 23, false, true, resourcesProvider);
+                break;
         }
         if (shouldApplyBackground(viewType)) {
             view.setBackgroundColor(getThemedColor(key_background));
@@ -621,7 +640,12 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
                 if (checkCell.itemId == item.id) {
                     checkCell.setChecked(item.checked);
                 }
-                checkCell.setTextAndCheck(item.text, item.checked, divider);
+                checkCell.setEnabled(item.enabled, null);
+                if(item.subtext != null) {
+                    checkCell.setTextAndValueAndCheck(item.text, item.subtext, item.checked,true, divider);
+                }else{
+                    checkCell.setTextAndCheck(item.text, item.checked, divider);
+                }
                 checkCell.itemId = item.id;
                 if (viewType == VIEW_TYPE_CHECKRIPPLE) {
                     holder.itemView.setBackgroundColor(Theme.getColor(item.checked ? Theme.key_windowBackgroundChecked : Theme.key_windowBackgroundUnchecked));
@@ -754,6 +778,7 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
             case VIEW_TYPE_SLIDE:
                 SlideChooseView slideView = (SlideChooseView) holder.itemView;
                 slideView.setOptions(item.intValue, item.texts);
+                slideView.setMinAllowedIndex((int) item.longValue);
                 slideView.setCallback(index -> {
                     if (item.intCallback != null) {
                         item.intCallback.run(index);
@@ -763,6 +788,7 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
             case VIEW_TYPE_INTSLIDE:
                 SlideIntChooseView slideIntChooseView = (SlideIntChooseView) holder.itemView;
                 slideIntChooseView.set(item.intValue, (SlideIntChooseView.Options) item.object, item.intCallback);
+                slideIntChooseView.setMinValueAllowed((int) item.longValue);
                 break;
             case VIEW_TYPE_QUICK_REPLY:
                 QuickRepliesActivity.QuickReplyView replyView = (QuickRepliesActivity.QuickReplyView) holder.itemView;
@@ -843,7 +869,7 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
                 ProfileSearchCell profileCell = (ProfileSearchCell) holder.itemView;
                 Object object = item.object;
                 CharSequence s = "";
-                if (item.accent && object instanceof TLRPC.User && ((TLRPC.User) object).bot_active_users != 0) { // show bot dau
+                if (item.accent && object instanceof TLRPC.User && ((TLRPC.User) object).bot_active_users != 0) { // show bot mau
                     TLRPC.User user = (TLRPC.User) object;
                     if (user.bot_active_users != 0) {
                         s = LocaleController.formatPluralStringSpaced("BotUsers", user.bot_active_users);
@@ -883,6 +909,8 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
                     // add status text
                     title = UserObject.getUserName(user);
                 }
+                profileCell.allowBotOpenButton(item.checked, item.object2 instanceof Utilities.Callback ? (Utilities.Callback) item.object2 : null);
+                profileCell.setRectangularAvatar(item.red);
                 profileCell.setData(object, null, title, s, false, false);
                 profileCell.useSeparator = divider;
                 break;
@@ -935,6 +963,12 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
                     });
                 }
                 break;
+            case VIEW_TYPE_ICON_TEXT_CHECK_2:
+                TextCell iconTextCheckCell = (TextCell) holder.itemView;
+                iconTextCheckCell.setEnabled(item.enabled);
+                iconTextCheckCell.setTextAndIcon(item.text, item.iconResId, divider);
+                iconTextCheckCell.setChecked(item.checked);
+                break;
         }
     }
 
@@ -979,10 +1013,17 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
     public void updateReorder(RecyclerView.ViewHolder holder, boolean allowReorder) {
         if (holder == null) return;
         final int viewType = holder.getItemViewType();
-        switch (viewType) {
-            case VIEW_TYPE_QUICK_REPLY:
-                ((QuickRepliesActivity.QuickReplyView) holder.itemView).setReorder(allowReorder);
-                break;
+        if (viewType >= UItem.factoryViewTypeStartsWith) {
+            UItem.UItemFactory<?> factory = UItem.findFactory(viewType);
+            if (factory != null) {
+                factory.attachedView(holder.itemView, getItem(holder.getAdapterPosition()));
+            }
+        } else {
+            switch (viewType) {
+                case VIEW_TYPE_QUICK_REPLY:
+                    ((QuickRepliesActivity.QuickReplyView) holder.itemView).setReorder(allowReorder);
+                    break;
+            }
         }
     }
 
@@ -1022,7 +1063,8 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
                 viewType == VIEW_TYPE_ROUND_GROUP_CHECKBOX ||
                 viewType == VIEW_TYPE_SWITCH ||
                 viewType == VIEW_TYPE_EXPANDABLE_SWITCH ||
-                viewType == VIEW_TYPE_SHADOW_COLLAPSE_BUTTON
+                viewType == VIEW_TYPE_SHADOW_COLLAPSE_BUTTON ||
+                viewType == VIEW_TYPE_ICON_TEXT_CHECK_2
             );
         }
         return clickable && (item == null || item.enabled);

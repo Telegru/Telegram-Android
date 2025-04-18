@@ -40,6 +40,7 @@ import org.telegram.messenger.UserObject;
 import org.telegram.messenger.voip.VoIPService;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.tgnet.tl.TL_phone;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.BottomSheet;
@@ -105,7 +106,7 @@ public class JoinCallAlert extends BottomSheet {
     }
 
     public interface JoinCallAlertDelegate {
-        void didSelectChat(TLRPC.InputPeer peer, boolean hasFewPeers, boolean schedule);
+        void didSelectChat(TLRPC.InputPeer peer, boolean hasFewPeers, boolean schedule, boolean isRtmpStream);
     }
 
     public class BottomSheetCell extends FrameLayout {
@@ -203,7 +204,7 @@ public class JoinCallAlert extends BottomSheet {
             return;
         }
         final AlertDialog progressDialog = new AlertDialog(context, AlertDialog.ALERT_TYPE_SPINNER);
-        TLRPC.TL_phone_getGroupCallJoinAs req = new TLRPC.TL_phone_getGroupCallJoinAs();
+        TL_phone.getGroupCallJoinAs req = new TL_phone.getGroupCallJoinAs();
         req.peer = accountInstance.getMessagesController().getInputPeer(did);
         int reqId = accountInstance.getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
             try {
@@ -212,7 +213,7 @@ public class JoinCallAlert extends BottomSheet {
                 FileLog.e(e);
             }
             if (response != null) {
-                TLRPC.TL_phone_joinAsPeers res = (TLRPC.TL_phone_joinAsPeers) response;
+                TL_phone.joinAsPeers res = (TL_phone.joinAsPeers) response;
                 cachedChats = res.peers;
                 lastCacheDid = did;
                 lastCacheTime = SystemClock.elapsedRealtime();
@@ -237,13 +238,13 @@ public class JoinCallAlert extends BottomSheet {
         if (lastCachedAccount == accountInstance.getCurrentAccount() && lastCacheDid == did && cachedChats != null && SystemClock.elapsedRealtime() - lastCacheTime < 5 * 60 * 1000) {
             if (cachedChats.size() == 1 && type != TYPE_CREATE) {
                 TLRPC.InputPeer peer = accountInstance.getMessagesController().getInputPeer(MessageObject.getPeerId(cachedChats.get(0)));
-                delegate.didSelectChat(peer, false, false);
+                delegate.didSelectChat(peer, false, false, false);
             } else {
                 showAlert(context, did, cachedChats, fragment, type, scheduledPeer, delegate);
             }
         } else {
             final AlertDialog progressDialog = new AlertDialog(context, AlertDialog.ALERT_TYPE_SPINNER);
-            TLRPC.TL_phone_getGroupCallJoinAs req = new TLRPC.TL_phone_getGroupCallJoinAs();
+            TL_phone.getGroupCallJoinAs req = new TL_phone.getGroupCallJoinAs();
             req.peer = accountInstance.getMessagesController().getInputPeer(did);
             int reqId = accountInstance.getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
                 try {
@@ -252,10 +253,10 @@ public class JoinCallAlert extends BottomSheet {
                     FileLog.e(e);
                 }
                 if (response != null) {
-                    TLRPC.TL_phone_joinAsPeers res = (TLRPC.TL_phone_joinAsPeers) response;
+                    TL_phone.joinAsPeers res = (TL_phone.joinAsPeers) response;
                     if (res.peers.size() == 1) {
                         TLRPC.InputPeer peer = accountInstance.getMessagesController().getInputPeer(MessageObject.getPeerId(res.peers.get(0)));
-                        delegate.didSelectChat(peer, false, false);
+                        delegate.didSelectChat(peer, false, false, false);
                         return;
                     }
                     cachedChats = res.peers;
@@ -591,7 +592,7 @@ public class JoinCallAlert extends BottomSheet {
             TLRPC.InputPeer peer = MessagesController.getInstance(currentAccount).getInputPeer(MessageObject.getPeerId(selectedPeer));
             if (currentType == TYPE_DISPLAY) {
                 if (selectedPeer != currentPeer) {
-                    delegate.didSelectChat(peer, chats.size() > 1, false);
+                    delegate.didSelectChat(peer, chats.size() > 1, false, false);
                 }
             } else {
                 selectAfterDismiss = peer;
@@ -663,7 +664,7 @@ public class JoinCallAlert extends BottomSheet {
     public void dismissInternal() {
         super.dismissInternal();
         if (selectAfterDismiss != null) {
-            delegate.didSelectChat(selectAfterDismiss, chats.size() > 1, schedule);
+            delegate.didSelectChat(selectAfterDismiss, chats.size() > 1, schedule, false);
         }
     }
 

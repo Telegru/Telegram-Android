@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="DahlAppName">Даль</string>
+    <string name="DahlAppNameBeta">Даль Beta</string>
+    <string name="DahlVersion">Даль — мессенджер для Android %1$s\n Основан на Telegram %2$s</string>
+
+    <string name="Slide2Title">Общение</string>
+    <string name="Slide3Title">Простота и удобство</string>
+    <string name="Slide4Title">Приватность</string>
+    <string name="Slide5Title">Скорость</string>
+    <string name="Slide6Title">Коллаборация</string>
+    <string name="Slide7Title">Творчество</string>
+
+    <string name="Slide1Message">Мессенджер, **созданный с пониманием** потребностей российской аудитории.</string>
+    <string name="Slide2Message">Мгновенная **синхронизация данных** — можете начать разговор на одном устройстве, а продолжить на другом.</string>
+    <string name="Slide3Message">**Убрали всё лишнее**, чтобы вы могли сосредоточиться на важном — \n разговорах и идеях.</string>
+    <string name="Slide4Message">Ваши данные **принадлежат только вам**. "Даль" не использует их для рекламы и не передаёт третьим лицам. </string>
+    <string name="Slide5Message">Высокая скорость передачи сообщений **даже при слабом подключении**.</string>
+    <string name="Slide6Message">**Создавайте** группы, **организовывайте** проекты, **делитесь** важными идеями.</string>
+    <string name="Slide7Message">**Расширяйте свои границы** самовыражения с помощью эмодзи, стикеров и GIF.</string>
+    <string name="Slide8Message">**Читайте** в Даль. **Пишите** в Даль. \n **Смотрите** в Даль.</string>
+
+    <string name="ThemeDahl">Даль</string>
+    <string name="SettingsDahl">Настройки Даль</string>
+    <string name="IconsVkUI">Использовать набор VK UI</string>
+    <string name="RectangularAvatars">Квадратные аватары</string>
+    <string name="RestartToast">Чтобы изменения вступили в силу перезапустите приложение</string>
+
+    <string name="ChatsSettings">Чаты</string>
+    <string name="ChatsFolders">Папки</string>
+    <string name="FoldersAtBottom">Переместить вниз</string>
+    <string name="HideAllChatsFolder">Скрыть папку \"Все чаты\"</string>
+    <string name="FoldersInfiniteScrolling">Листать по кругу</string>
+    <string name="AllFolders">Все папки</string>
+    <string name="HideFolders">Скрыть</string>
+
+    <string name="ImportantNotice">Важное замечание</string>
+    <string name="ImportantMessage">Это неофициальная версия Телеграм. Нажимая \'Подтвердить\', вы подтверждаете, что ознакомились с этим сообщением и согласны продолжить. Скоро здесь появится множество дополнительных функций, которых нет в основном приложении Телеграм.</string>
+    <string name="ShowAllFolders">Показывать все папки</string>
+    <string name="Categories">Категории</string>
+    <string name="Links">Ссылки</string>
+    <string name="DahlSupportInfo">Пожалуйста, обратите внимание, что в поддержке Даль отвечают волонтеры. Мы постараемся помочь, как можно скорее, но ожидание может занять время.</string>
+    <string name="ConnectionType">Тип соединения</string>
+    <string name="ProxyDahl">Прокси Даль</string>
+    <string name="ProxyDahlInfo">Включайте при сбоях в соединении.</string>
+    <string name="Profile">Профиль</string>
+    <string name="HidePhoneNumber">Скрыть номер телефона</string>
+    <string name="HidePhoneNumberInfo">Номер будет скрыт только из меню Настроек.</string>
+    <string name="Privacy">Приватность</string>
+    <string name="MessagesStatus">Статус прочтения сообщений</string>
+    <string name="MessagesStatusInfo">Ваш собеседник не будет видеть, что его сообщение прочитано</string>
+    <string name="OfflineMode">Режим \"Оффлайн\"</string>
+    <string name="OfflineModeInfo">Для других вы всегда будете в оффлайн режиме</string>
+    <string name="PremiumFeatures">Premium функции</string>
+    <string name="PremiumFeaturesInfo">Настройте Premium функции под себя.</string>
+    <string name="PremiumFeaturesEnableInfo">Оставьте включенными только нужные вам Premium функции.</string>
+    <string name="EnableInChatsAndChannels">Включить в чатах и каналах</string>
+    <string name="BottomPanelInChannels">Нижнюю панель в каналах</string>
+    <string name="PersonalColors">Персональные цвета</string>
+    <string name="Wallpapers">Обои</string>
+    <string name="TgSettingsMenu">Меню настроек Telegram</string>
+    <string name="HideHelpBlock">Скрыть блок \"Помощь\"</string>
+    <string name="NavigationDrawer">Боковое меню</string>
+    <string name="NavigationDrawerItems">Пункты бокового меню</string>
+    <string name="ElementsRounding">Закругление элементов (аватары и кнопки)</string>
+    <string name="Squared">Квадратные</string>
+    <string name="AvatarsFont">Шрифт в аватарах</string>
+    <string name="Nizhegorodski">Нижегородский</string>
+    <string name="FontAuthor">Автор шрифта: <![CDATA[<font color="%1$s"><b>Александр Шиманов</b></font>]]></string>
+    <string name="Icons">Иконки</string>
+    <string name="BlockPremium">Блок Premium</string>
+    <string name="HideFromSettings">Скрыть из настроек</string>
+    <string name="HidePremiumInfo">Настройка Premium функций будет скрыта из общего раздела \"Настройки\".</string>
+    <string name="StatusIcons">Эмодзи-статусы</string>
+    <string name="StatusIconsInfo">Отключите, чтобы не видеть эмодзи-статусы около имен пользователей</string>
+    <string name="AnimatedAvatars">Анимированнные аватары</string>
+    <string name="CustomChannelsWallpapers">Кастомные обои в каналах</string>
+    <string name="AnimatedReactions">Анимированные реакции</string>
+    <string name="AnimatedPremiumStickers">Анимация премиум-стикеров</string>
+    <string name="TouchPremiumStickers">Нажатие на премиум-стикеры</string>
+    <string name="Stories">Истории</string>
+    <string name="HideStories">Не показывать в чатах</string>
+    <string name="HideArchiveStories">Не показывать в Архиве</string>
+    <string name="HideAddStory">Скрыть кнопку создания</string>
+    <string name="HideViewedStories">Скрывать просмотренные истории</string>
+    <string name="RecentChats">Недавние чаты</string>
+    <string name="EnablePanel">Включить панель</string>
+    <string name="RecentChatsInfo">Над списком чатов появится панель быстрого перехода к недавно посещенным чатам. </string>
+    <string name="NeedConfirm">Подтверждение</string>
+    <string name="ConfirmCalling">Звонок</string>
+    <string name="ConfirmAudioMessage">Отправка аудиосообщения</string>
+    <string name="ConfirmVideoMessageCamera">Камера видеосообщения</string>
+  
+    <string name="DahlProxyEnable">Включить прокси Даль</string>
+    <string name="DahlProxyDisable">Выключить прокси Даль</string>
+    <string name="DahlUseYourProxySettings">Использовать свой прокси</string>
+
+    <string name="AppIconBlack">Черная</string>
+    <string name="AppIconMetallic">Металл</string>
+    <string name="AppIconSilver">Серебро</string>
+    <string name="AppIconInverted">Инверсия</string>
+    <string name="AppIconWhite">Белая</string>
+    <string name="AppIconUnicorn">Единорог</string>
+    <string name="AppIconOutline">Контур</string>
+    <string name="AppIconTitanium">Титан</string>
+    <string name="AppIconSparkling">Игристое</string>
+    <string name="AppIconRussia">Россия</string>
+    <string name="AppIconTriangle">Треугольник</string>
+    <string name="AppIconTatarstan">Татарстан</string>
+    <string name="AppIconBirch">Береза</string>
+    <string name="AppIconWinter">Зима</string>
+
+    <string name="Wallet">Кошелек</string>
+    <string name="CustomWallpapers">Кастомные обои</string>
+    <string name="ChatListSingleLine">Однострочный</string>
+    <string name="NavigationDrawerSettingsInfo">Нельзя убрать из бокового меню пункты \"Настройки\" и \"Настройки Даль\".</string>
+
+    <string name="NavigationDrawerItems_zero">Настройки, Настройки Даль</string>
+    <string name="NavigationDrawerItems_one">%1$d пункт, Настройки, Настройки Даль</string>
+    <string name="NavigationDrawerItems_two">%1$d пункта, Настройки, Настройки Даль</string>
+    <string name="NavigationDrawerItems_few">%1$d пункта, Настройки, Настройки Даль</string>
+    <string name="NavigationDrawerItems_many">%1$d пунктов, Настройки, Настройки Даль</string>
+    <string name="NavigationDrawerItems_other">%1$d пунктов, Настройки, Настройки Даль</string>
+
+    <string name="CameraAsk">Спрашивать перед записью</string>
+    <string name="CameraFront">Фронтальная камера</string>
+    <string name="CameraRear">Задняя камера</string>
+    <string name="Ask">Спрашивать</string>
+    <string name="Front">Фронтальная</string>
+    <string name="Rear">Задняя</string>
+    <string name="EmptyRecentChats">Здесь будут недавние чаты</string>
+    <string name="DisableRecentChats">Выключить панель</string>
+    <string name="ClearRecentChatsAlert">Вы точно хотите очистить историю недавних чатов? Данные чатов сохранятся.</string>
+
+    <string name="SendAudioMessage">Отправить аудиосообщение</string>
+    <string name="SendAudioMessageInfo">Вы точно хотите отправить это аудиосообщение?</string>
+
+    <string name="Keyboard">Клавиатура</string>
+    <string name="HideOnScroll">Скрывать при скролле</string>
+    <string name="HideOnScrollInfo">Во время скроллинга чата при активном поле ввода сообщения клавиатура будет скрываться.</string>
+
+    <string name="CallConfirmationAlert">Вы точно хотите позвонить <![CDATA[<font color="%1$s"><b>%2$s</b></font>]]>?</string>
+    <string name="reloadToApply">Перезапустите приложение, чтобы изменения вступили в силу</string>
+</resources>

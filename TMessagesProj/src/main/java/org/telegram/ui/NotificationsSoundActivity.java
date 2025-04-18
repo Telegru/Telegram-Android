@@ -38,6 +38,7 @@ import org.telegram.messenger.ContactsController;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
+import org.telegram.messenger.MediaController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.NotificationsController;
@@ -45,6 +46,7 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.ringtone.RingtoneDataStore;
 import org.telegram.messenger.ringtone.RingtoneUploader;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.tgnet.tl.TL_account;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
 import org.telegram.ui.ActionBar.AlertDialog;
@@ -270,7 +272,7 @@ public class NotificationsSoundActivity extends BaseFragment implements ChatAtta
 
                 for (int i = 0; i < documentsToRemove.size(); i++) {
                     TLRPC.Document document = documentsToRemove.get(i);
-                    TLRPC.TL_account_saveRingtone req = new TLRPC.TL_account_saveRingtone();
+                    TL_account.saveRingtone req = new TL_account.saveRingtone();
                     req.id = new TLRPC.TL_inputDocument();
                     req.id.id = document.id;
                     req.id.access_hash = document.access_hash;
@@ -583,7 +585,7 @@ public class NotificationsSoundActivity extends BaseFragment implements ChatAtta
     }
 
     @Override
-    public void didSelectFiles(ArrayList<String> files, String caption, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, long effectId, boolean invertMedia) {
+    public void didSelectFiles(ArrayList<String> files, String caption, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, long effectId, boolean invertMedia, long payStars) {
         for (int i = 0; i < files.size(); i++) {
             getMediaDataController().uploadRingtone(files.get(i));
         }
@@ -952,6 +954,9 @@ public class NotificationsSoundActivity extends BaseFragment implements ChatAtta
                 if (data.getData() != null) {
                     String path = AndroidUtilities.getPath(data.getData());
                     if (path != null) {
+                        if (path.startsWith("content://")) {
+                            path = MediaController.copyFileToCache(data.getData(), "mp3");
+                        }
                         File file = new File(path);
                         if (chatAttachAlert.getDocumentLayout().isRingtone(file)) {
                             apply = true;
@@ -962,8 +967,13 @@ public class NotificationsSoundActivity extends BaseFragment implements ChatAtta
                 } else if (data.getClipData() != null) {
                     ClipData clipData = data.getClipData();
                     for (int i = 0; i < clipData.getItemCount(); i++) {
-                        String path = clipData.getItemAt(i).getUri().toString();
-                        if (chatAttachAlert.getDocumentLayout().isRingtone(new File(path))) {
+                        Uri uri = clipData.getItemAt(i).getUri();
+                        String path = uri.toString();
+                        if (path.startsWith("content://")) {
+                            path = MediaController.copyFileToCache(uri, "mp3");
+                        }
+                        final File file = new File(path);
+                        if (chatAttachAlert.getDocumentLayout().isRingtone(file)) {
                             apply = true;
                             getMediaDataController().uploadRingtone(path);
                             getNotificationCenter().postNotificationName(NotificationCenter.onUserRingtonesUpdated);

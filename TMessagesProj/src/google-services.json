@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "504335149376",
+    "project_id": "dahl-4d255",
+    "storage_bucket": "dahl-4d255.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:504335149376:android:689ad9b0fcceb482eaf2a5",
+        "android_client_info": {
+          "package_name": "ru.tusco.messenger"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCzzsWOebOWRgsmqkPD_lFRcG_T0kwie7Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:504335149376:android:ddca2dbb3c3e014deaf2a5",
+        "android_client_info": {
+          "package_name": "ru.tusco.messenger.beta"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCzzsWOebOWRgsmqkPD_lFRcG_T0kwie7Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

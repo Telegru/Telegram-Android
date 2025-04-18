@@ -1,6 +1,7 @@
 import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
 
 apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
 
 repositories {
     mavenCentral()
@@ -11,8 +12,7 @@ configurations {
     compile.exclude module: 'support-v4'
 }
 
-configurations.all {
-    exclude group: 'com.google.firebase', module: 'firebase-core'
+configurations.configureEach {
     exclude group: 'androidx.recyclerview', module: 'recyclerview'
 }
 
@@ -27,11 +27,17 @@ dependencies {
     implementation 'androidx.interpolator:interpolator:1.0.0'
     implementation 'androidx.biometric:biometric:1.1.0'
 
+    implementation 'com.google.android.gms:play-services-cast-framework:21.4.0'
+    implementation "androidx.mediarouter:mediarouter:1.7.0"
+    implementation 'org.nanohttpd:nanohttpd:2.3.1'
+
     compileOnly 'org.checkerframework:checker-qual:2.5.2'
     compileOnly 'org.checkerframework:checker-compat-qual:2.5.0'
     implementation 'com.google.firebase:firebase-messaging:22.0.0'
     implementation 'com.google.firebase:firebase-config:21.0.1'
     implementation 'com.google.firebase:firebase-datatransport:18.1.0'
+    implementation 'com.google.firebase:firebase-crashlytics:19.4.0'
+    implementation 'com.google.firebase:firebase-analytics:22.2.0'
     implementation 'com.google.firebase:firebase-appindexing:20.0.0'
     implementation 'com.google.android.gms:play-services-maps:18.1.0'
     implementation 'com.google.android.gms:play-services-auth:20.4.0'
@@ -58,13 +64,18 @@ dependencies {
             because("kotlin-stdlib-jdk8 is now a part of kotlin-stdlib")
         }
     }
+    implementation 'com.google.android.recaptcha:recaptcha:18.4.0'
 
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.5'
 }
 
 def isWindows = String.valueOf(DefaultNativePlatform.currentOperatingSystem.toFamilyName() == OperatingSystemFamily.WINDOWS)
 android {
-    compileSdkVersion 34
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+
+    compileSdk 34
     buildToolsVersion '34.0.0'
     ndkVersion "21.4.7075529"
 
@@ -82,6 +93,13 @@ android {
         disable 'BlockedPrivateApi'
     }
 
+    sourceSets.main {
+        res.srcDirs = [
+            'src/main/res',
+            'src/main/res-vkui'
+        ]
+    }
+
     dexOptions {
         jumboMode = true
     }
@@ -95,7 +113,7 @@ android {
 
 
     defaultConfig {
-        minSdkVersion 19
+        minSdkVersion 21
         targetSdkVersion 34
 
         vectorDrawables.generatedDensities = ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi']
@@ -116,52 +134,64 @@ android {
             minifyEnabled false
             shrinkResources false
             multiDexEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), '../TMessagesProj/proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), '../TMessagesProj/proguard-rules.pro', '../TMessagesProj/proguard-rules-beta.pro'
             ndk.debugSymbolLevel = 'FULL'
             buildConfigField "String", "BUILD_VERSION_STRING", "\"" + APP_VERSION_NAME + "\""
+            buildConfigField "long", "APP_VERSION_CODE", APP_VERSION_CODE
             buildConfigField "String", "APP_CENTER_HASH", "\"\""
             buildConfigField "boolean", "DEBUG_VERSION", "true"
             buildConfigField "boolean", "DEBUG_PRIVATE_VERSION", "true"
             buildConfigField "boolean", "BUILD_HOST_IS_WINDOWS", isWindows
+            buildConfigField("long", "TG_BUILD_VERSION", "${TG_APP_VERSION_CODE}")
+            buildConfigField("String","TG_BUILD_VERSION_STRING","\"${TG_APP_VERSION_NAME}\"")
         }
 
         HA_private {
             jniDebuggable false
             minifyEnabled true
             multiDexEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), '../TMessagesProj/proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), '../TMessagesProj/proguard-rules.pro', '../TMessagesProj/proguard-rules-beta.pro'
             ndk.debugSymbolLevel = 'FULL'
             buildConfigField "String", "BUILD_VERSION_STRING", "\"" + APP_VERSION_NAME + "\""
+            buildConfigField "long", "APP_VERSION_CODE", APP_VERSION_CODE
             buildConfigField "String", "APP_CENTER_HASH", "\"" + getProps("APP_CENTER_HASH_PRIVATE") + "\""
             buildConfigField "boolean", "DEBUG_VERSION", "true"
             buildConfigField "boolean", "DEBUG_PRIVATE_VERSION", "true"
             buildConfigField "boolean", "BUILD_HOST_IS_WINDOWS", isWindows
+            buildConfigField("long", "TG_BUILD_VERSION", "${TG_APP_VERSION_CODE}")
+            buildConfigField("String","TG_BUILD_VERSION_STRING","\"${TG_APP_VERSION_NAME}\"")
         }
 
         HA_public {
             jniDebuggable false
             minifyEnabled true
             multiDexEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), '../TMessagesProj/proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), '../TMessagesProj/proguard-rules.pro', '../TMessagesProj/proguard-rules-beta.pro'
             ndk.debugSymbolLevel = 'FULL'
             buildConfigField "String", "BUILD_VERSION_STRING", "\"" + APP_VERSION_NAME + "\""
+            buildConfigField "long", "APP_VERSION_CODE", APP_VERSION_CODE
             buildConfigField "String", "APP_CENTER_HASH", "\"" + getProps("APP_CENTER_HASH_PUBLIC") + "\""
             buildConfigField "boolean", "DEBUG_VERSION", "true"
             buildConfigField "boolean", "DEBUG_PRIVATE_VERSION", "false"
             buildConfigField "boolean", "BUILD_HOST_IS_WINDOWS", isWindows
+            buildConfigField("long", "TG_BUILD_VERSION", "${TG_APP_VERSION_CODE}")
+            buildConfigField("String","TG_BUILD_VERSION_STRING","\"${TG_APP_VERSION_NAME}\"")
         }
 
         HA_hardcore {
             jniDebuggable false
             minifyEnabled true
             multiDexEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), '../TMessagesProj/proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), '../TMessagesProj/proguard-rules.pro', '../TMessagesProj/proguard-rules-beta.pro'
             ndk.debugSymbolLevel = 'FULL'
             buildConfigField "String", "BUILD_VERSION_STRING", "\"" + APP_VERSION_NAME + "\""
+            buildConfigField "long", "APP_VERSION_CODE", APP_VERSION_CODE
             buildConfigField "String", "APP_CENTER_HASH", "\"" + getProps("APP_CENTER_HASH_HARDCORE") + "\""
             buildConfigField "boolean", "DEBUG_VERSION", "true"
             buildConfigField "boolean", "DEBUG_PRIVATE_VERSION", "true"
             buildConfigField "boolean", "BUILD_HOST_IS_WINDOWS", isWindows
+            buildConfigField("long", "TG_BUILD_VERSION", "${TG_APP_VERSION_CODE}")
+            buildConfigField("String","TG_BUILD_VERSION_STRING","\"${TG_APP_VERSION_NAME}\"")
         }
 
         standalone {
@@ -171,10 +201,13 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), '../TMessagesProj/proguard-rules.pro'
             ndk.debugSymbolLevel = 'FULL'
             buildConfigField "String", "BUILD_VERSION_STRING", "\"" + APP_VERSION_NAME + "\""
+            buildConfigField "long", "APP_VERSION_CODE", APP_VERSION_CODE
             buildConfigField "String", "APP_CENTER_HASH", "\"\""
             buildConfigField "boolean", "DEBUG_VERSION", "false"
             buildConfigField "boolean", "DEBUG_PRIVATE_VERSION", "false"
             buildConfigField "boolean", "BUILD_HOST_IS_WINDOWS", isWindows
+            buildConfigField("long", "TG_BUILD_VERSION", "${TG_APP_VERSION_CODE}")
+            buildConfigField("String","TG_BUILD_VERSION_STRING","\"${TG_APP_VERSION_NAME}\"")
         }
 
         release {
@@ -185,10 +218,13 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), '../TMessagesProj/proguard-rules.pro'
             ndk.debugSymbolLevel = 'FULL'
             buildConfigField "String", "BUILD_VERSION_STRING", "\"" + APP_VERSION_NAME + "\""
+            buildConfigField "long", "APP_VERSION_CODE", APP_VERSION_CODE
             buildConfigField "String", "APP_CENTER_HASH", "\"\""
             buildConfigField "boolean", "DEBUG_VERSION", "false"
             buildConfigField "boolean", "DEBUG_PRIVATE_VERSION", "false"
             buildConfigField "boolean", "BUILD_HOST_IS_WINDOWS", isWindows
+            buildConfigField("long", "TG_BUILD_VERSION", "${TG_APP_VERSION_CODE}")
+            buildConfigField("String","TG_BUILD_VERSION_STRING","\"${TG_APP_VERSION_NAME}\"")
         }
     }
     namespace 'org.telegram.messenger'
@@ -205,12 +241,12 @@ def getProps(String propName) {
         return "";
     }
 }
-apply plugin: 'com.google.gms.google-services'
+//apply plugin: 'com.google.gms.google-services'
 
 task checkVisibility {
     doFirst {
         def isPrivateBuild = project.gradle.startParameter.taskNames.find {
-            it.contains("HA_private") || it.contains("Debug") || it.contains("Release")
+            it.contains("HA_private") || it.contains("HA_hardcore") || it.contains("Debug") || it.contains("Release")
         }
         def isPublicAllowed = !project.hasProperty("IS_PRIVATE") || !project.property("IS_PRIVATE").toBoolean()
         if (!isPrivateBuild && !isPublicAllowed) {

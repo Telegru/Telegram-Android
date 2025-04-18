@@ -24,6 +24,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 
+import ru.dahl.messenger.DahlWallpaper;
+
 public class EmojiThemes {
 
     public static final String REMOVED_EMOJI = "❌";
@@ -315,23 +317,28 @@ public class EmojiThemes {
         }
 
         SparseIntArray fallbackKeys = Theme.getFallbackKeys();
-        items.get(index).currentPreviewColors = new SparseIntArray();
-        for (int i = 0; i < previewColorKeys.length; i++) {
-            int key = previewColorKeys[i];
-            int colorIndex = currentColors.indexOfKey(key);
-            if (colorIndex >= 0) {
-                items.get(index).currentPreviewColors.put(key, currentColors.valueAt(colorIndex));
-            } else {
-                int fallbackKey = fallbackKeys.get(key, -1);
-                if (fallbackKey >= 0) {
-                    int fallbackIndex = currentColors.indexOfKey(fallbackKey);
-                    if (fallbackIndex >= 0) {
-                        items.get(index).currentPreviewColors.put(key, currentColors.valueAt(fallbackIndex));
+        SparseIntArray array = new SparseIntArray();
+        items.get(index).currentPreviewColors = array;
+        try {
+            for (int i = 0; i < previewColorKeys.length; i++) {
+                int key = previewColorKeys[i];
+                int colorIndex = currentColors.indexOfKey(key);
+                if (colorIndex >= 0) {
+                    array.put(key, currentColors.valueAt(colorIndex));
+                } else {
+                    int fallbackKey = fallbackKeys.get(key, -1);
+                    if (fallbackKey >= 0) {
+                        int fallbackIndex = currentColors.indexOfKey(fallbackKey);
+                        if (fallbackIndex >= 0) {
+                            array.put(key, currentColors.valueAt(fallbackIndex));
+                        }
                     }
                 }
             }
+        } catch (Exception e) {
+            FileLog.e(e);
         }
-        return items.get(index).currentPreviewColors;
+        return array;
     }
 
     public SparseIntArray createColors(int currentAccount, int index) {
@@ -525,11 +532,11 @@ public class EmojiThemes {
         if (isDark != themeInfo.isDark()) {
             SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("themeconfig", Activity.MODE_PRIVATE);
             String lastThemeName = isDark
-                    ? preferences.getString("lastDarkTheme", "Dark Blue")
-                    : preferences.getString("lastDayTheme", "Blue");
+                    ? preferences.getString("lastDarkTheme", "Night")
+                    : preferences.getString("lastDayTheme", "Day");
             themeInfo = Theme.getTheme(lastThemeName);
             if (themeInfo == null) {
-                themeInfo = Theme.getTheme(isDark ? "Dark Blue" : "Blue");
+                themeInfo = Theme.getTheme(isDark ? "Night" : "Day");
             }
         }
         return new Theme.ThemeInfo(themeInfo);
@@ -580,10 +587,11 @@ public class EmojiThemes {
             if (items.get(i).themeInfo != null && items.get(i).themeInfo.getKey().equals("Blue")) {
                 int accentId = items.get(i).accentId >= 0 ? items.get(i).accentId : items.get(i).themeInfo.currentAccentId;
                 if (accentId == 99) {
-                    items.get(i).patternBgColor = 0xffdbddbb;
-                    items.get(i).patternBgGradientColor1 = 0xff6ba587;
-                    items.get(i).patternBgGradientColor2 = 0xffd5d88d;
-                    items.get(i).patternBgGradientColor3 = 0xff88b884;
+                    int[] colors = DahlWallpaper.Russia.INSTANCE.getColors();
+                    items.get(i).patternBgColor = colors[0];
+                    items.get(i).patternBgGradientColor1 = colors[1];
+                    items.get(i).patternBgGradientColor2 = colors[2];
+                    items.get(i).patternBgGradientColor3 = colors[3];
                 }
             }
         }
@@ -591,9 +599,13 @@ public class EmojiThemes {
 
     private int getOrDefault(SparseIntArray colorsMap, int key) {
         if (colorsMap == null) return Theme.getDefaultColor(key);
-        int index = colorsMap.indexOfKey(key);
-        if (index >= 0) {
-            return colorsMap.valueAt(index);
+        try {
+            int index = colorsMap.indexOfKey(key);
+            if (index >= 0) {
+                return colorsMap.valueAt(index);
+            }
+        } catch (Exception e) {
+            FileLog.e(e);
         }
         return Theme.getDefaultColor(key);
     }

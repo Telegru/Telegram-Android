@@ -58,6 +58,8 @@ import org.telegram.ui.LaunchActivity;
 import java.io.File;
 import java.util.Collections;
 
+import ru.dahl.messenger.settings.DahlSettings;
+
 public class StoriesUtilities {
 
     private final static int ANIMATION_SEGMENT_COUNT = 16;
@@ -114,7 +116,7 @@ public class StoriesUtilities {
         int state;
         int unreadState = 0;
         boolean showProgress = storiesController.isLoading(dialogId);
-        boolean isForum = ChatObject.isForum(UserConfig.selectedAccount, dialogId) && !params.isDialogStoriesCell;
+        boolean isForum = (ChatObject.isForum(UserConfig.selectedAccount, dialogId) && !params.isDialogStoriesCell) || DahlSettings.getRectangularAvatars();
         if (params.drawHiddenStoriesAsSegments) {
             hasStories = storiesController.hasHiddenStories();
         }
@@ -574,7 +576,8 @@ public class StoriesUtilities {
 
     private static void drawSegment(Canvas canvas, RectF rectTmp, Paint paint, float startAngle, float endAngle, AvatarStoryParams params, boolean isForum) {
         if (isForum) {
-            float r = rectTmp.height() * 0.32f;
+            float value = DahlSettings.getRectangularAvatars() ? 0.16f : 0.32f;
+            float r = rectTmp.height() * value;
             float rotateAngle = (((int)(startAngle)) / 90) * 90 + 90;
             float pathAngleStart = -199 + rotateAngle;
             float percentFrom = (startAngle - pathAngleStart) / 360;
@@ -860,12 +863,12 @@ public class StoriesUtilities {
     }
 
     public static CharSequence createExpiredStoryString() {
-        return createExpiredStoryString(false, "ExpiredStory", R.string.ExpiredStory);
+        return createExpiredStoryString(false, R.string.ExpiredStory);
     }
 
-    public static CharSequence createExpiredStoryString(boolean useScale, String strKey, int strRes, Object... args) {
+    public static CharSequence createExpiredStoryString(boolean useScale, int strRes, Object... args) {
         SpannableStringBuilder spannableStringBuilder = new SpannableStringBuilder();
-        spannableStringBuilder.append("d ").append(LocaleController.formatString(strKey, strRes, args));
+        spannableStringBuilder.append("d ").append(LocaleController.formatString(strRes, args));
         ColoredImageSpan coloredImageSpan = new ColoredImageSpan(R.drawable.msg_mini_bomb);
         if (useScale) {
             coloredImageSpan.setScale(0.8f, 0.8f);
@@ -1173,13 +1176,15 @@ public class StoriesUtilities {
                             AndroidUtilities.cancelRunOnUIThread(longPressRunnable);
                         }
                         AndroidUtilities.runOnUIThread(longPressRunnable = () -> {
-                            view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                            try {
+                                view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                            } catch (Exception ignored) {}
                             if (buttonBounce != null) {
                                 buttonBounce.setPressed(false);
                             }
                             ViewParent parent = view.getParent();
                             if (parent instanceof ViewGroup) {
-                                ((ViewGroup) parent).requestDisallowInterceptTouchEvent(false);
+                                parent.requestDisallowInterceptTouchEvent(false);
                             }
                             pressed = false;
                             onLongPress();
@@ -1208,7 +1213,7 @@ public class StoriesUtilities {
                 }
                 ViewParent parent = view.getParent();
                 if (parent instanceof ViewGroup) {
-                    ((ViewGroup) parent).requestDisallowInterceptTouchEvent(false);
+                    parent.requestDisallowInterceptTouchEvent(false);
                 }
                 pressed = false;
                 if (longPressRunnable != null) {
@@ -1240,14 +1245,12 @@ public class StoriesUtilities {
                     if (user != null && !user.stories_unavailable && user.stories_max_id > 0) {
                         UserStoriesLoadOperation operation = new UserStoriesLoadOperation();
                         operation.load(dialogId, view, this);
-                        return;
                     }
                 } else {
                     TLRPC.Chat chat = messagesController.getChat(-dialogId);
                     if (chat != null && !chat.stories_unavailable && chat.stories_max_id > 0) {
                         UserStoriesLoadOperation operation = new UserStoriesLoadOperation();
                         operation.load(dialogId, view, this);
-                        return;
                     }
                 }
             }
@@ -1402,15 +1405,19 @@ public class StoriesUtilities {
 
         public void setChat(TLRPC.Chat chat, boolean animated) {
             int colorId = -1;
-//            if (chat != null && chat.profile_color != null) {
-//                colorId = chat.profile_color.color;
-//            }
+            if (chat != null && chat.profile_color != null) {
+                colorId = chat.profile_color.color;
+            }
             setColorId(colorId, animated);
         }
 
         public void setColorId(int colorId, boolean animated) {
             MessagesController.PeerColors peerColors = MessagesController.getInstance(currentAccount).profilePeerColors;
             MessagesController.PeerColor peerColor = peerColors == null ? null : peerColors.getColor(colorId);
+            setColor(peerColor, animated);
+        }
+
+        public void setColor(MessagesController.PeerColor peerColor, boolean animated) {
             if (peerColor != null) {
                 setColors(
                     peerColor.getStoryColor1(Theme.isCurrentThemeDark()),
@@ -1421,6 +1428,7 @@ public class StoriesUtilities {
                 resetColors(animated);
             }
         }
+
         private void resetColors(boolean animated) {
             if (isDialogCell) {
                 setColors(Theme.getColor(Theme.key_stories_circle_dialog1), Theme.getColor(Theme.key_stories_circle_dialog2), animated);

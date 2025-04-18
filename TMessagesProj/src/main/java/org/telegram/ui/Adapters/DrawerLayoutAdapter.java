@@ -38,11 +38,26 @@ import org.telegram.ui.Components.SideMenultItemAnimator;
 import java.util.ArrayList;
 import java.util.Collections;
 
+import ru.dahl.messenger.settings.DahlSettings;
+import ru.dahl.messenger.settings.model.NavDrawerSettings;
+
 public class DrawerLayoutAdapter extends RecyclerListView.SelectionAdapter {
+
+    public static final int ID_PROXY = 98;
+    public static final int ID_PROFILE = 16;
+    public static final int ID_CHANGE_STATUS = 15;
+    public static final int ID_NEW_GROUP = 2;
+    public static final int ID_CONTACTS = 6;
+    public static final int ID_CALLS = 10;
+    public static final int ID_SAVED_MESSAGES = 11;
+    public static final int ID_INVITE_FRIENDS = 7;
+    public static final int ID_TELEGRAM_FEATURES = 13;
+    public static final int ID_SETTINGS = 8;
+    public static final int ID_DAHL_SETTINGS= 99;
 
     private Context mContext;
     private DrawerLayoutContainer mDrawerLayoutContainer;
-    private ArrayList<Item> items = new ArrayList<>(11);
+    private ArrayList<Item> items = new ArrayList<>(12);
     private ArrayList<Integer> accountNumbers = new ArrayList<>();
     private boolean accountsShown;
     public DrawerProfileCell profileCell;
@@ -255,6 +270,7 @@ public class DrawerLayoutAdapter extends RecyclerListView.SelectionAdapter {
         int contactsIcon;
         int callsIcon;
         int savedIcon;
+        int dahlSettingsIcon;
         int settingsIcon;
         int inviteIcon;
         int helpIcon;
@@ -299,50 +315,63 @@ public class DrawerLayoutAdapter extends RecyclerListView.SelectionAdapter {
             inviteIcon = R.drawable.msg_invite;
             helpIcon = R.drawable.msg_help;
         }
+        dahlSettingsIcon = R.drawable.settings_dahl;
         UserConfig me = UserConfig.getInstance(UserConfig.selectedAccount);
         boolean showDivider = false;
-        items.add(new Item(16, LocaleController.getString(R.string.MyProfile), R.drawable.left_status_profile));
-        if (me != null && me.isPremium()) {
-            if (me.getEmojiStatus() != null) {
-                items.add(new Item(15, LocaleController.getString(R.string.ChangeEmojiStatus), R.drawable.msg_status_edit));
-            } else {
-                items.add(new Item(15, LocaleController.getString(R.string.SetEmojiStatus), R.drawable.msg_status_set));
-            }
+        NavDrawerSettings navDrawerItems = DahlSettings.getNavigationDrawerItems();
+        if(navDrawerItems.getProxy()) {
+            items.add(new Item(ID_PROXY, LocaleController.getString(DahlSettings.isProxyEnabled() ? R.string.DahlProxyDisable : R.string.DahlProxyEnable), R.drawable.shield_keyhole_outline_28));
+            items.add(null); // divider
+        }
+        if(navDrawerItems.getProfile()) {
+            items.add(new Item(ID_PROFILE, LocaleController.getString(R.string.MyProfile), R.drawable.left_status_profile));
             showDivider = true;
+        }
+        if(navDrawerItems.getChangeStatus()) {
+            if (me != null && me.isPremium()) {
+                if (me.getEmojiStatus() != null) {
+                    items.add(new Item(ID_CHANGE_STATUS, LocaleController.getString(R.string.ChangeEmojiStatus), R.drawable.msg_status_edit));
+                } else {
+                    items.add(new Item(ID_CHANGE_STATUS, LocaleController.getString(R.string.SetEmojiStatus), R.drawable.msg_status_set));
+                }
+                showDivider = true;
+            }
         }
 //        if (MessagesController.getInstance(UserConfig.selectedAccount).storiesEnabled()) {
 //            items.add(new Item(17, LocaleController.getString(R.string.ProfileStories), R.drawable.msg_menu_stories));
 //            showDivider = true;
 //        }
-        showDivider = true;
         if (ApplicationLoader.applicationLoaderInstance != null) {
             if (ApplicationLoader.applicationLoaderInstance.extendDrawer(items)) {
                 showDivider = true;
             }
         }
-        TLRPC.TL_attachMenuBots menuBots = MediaDataController.getInstance(UserConfig.selectedAccount).getAttachMenuBots();
-        if (menuBots != null && menuBots.bots != null) {
-            for (int i = 0; i < menuBots.bots.size(); i++) {
-                TLRPC.TL_attachMenuBot bot = menuBots.bots.get(i);
-                if (bot.show_in_side_menu) {
-                    items.add(new Item(bot));
-                    showDivider = true;
+        if(navDrawerItems.getWallet()) {
+            TLRPC.TL_attachMenuBots menuBots = MediaDataController.getInstance(UserConfig.selectedAccount).getAttachMenuBots();
+            if (menuBots != null && menuBots.bots != null) {
+                for (int i = 0; i < menuBots.bots.size(); i++) {
+                    TLRPC.TL_attachMenuBot bot = menuBots.bots.get(i);
+                    if (bot.show_in_side_menu) {
+                        items.add(new Item(bot));
+                        showDivider = true;
+                    }
                 }
             }
         }
         if (showDivider) {
             items.add(null); // divider
         }
-        items.add(new Item(2, LocaleController.getString(R.string.NewGroup), newGroupIcon));
+        if(navDrawerItems.getNewGroup()) items.add(new Item(ID_NEW_GROUP, LocaleController.getString(R.string.NewGroup), newGroupIcon));
         //items.add(new Item(3, LocaleController.getString(R.string.NewSecretChat), newSecretIcon));
         //items.add(new Item(4, LocaleController.getString(R.string.NewChannel), newChannelIcon));
-        items.add(new Item(6, LocaleController.getString(R.string.Contacts), contactsIcon));
-        items.add(new Item(10, LocaleController.getString(R.string.Calls), callsIcon));
-        items.add(new Item(11, LocaleController.getString(R.string.SavedMessages), savedIcon));
-        items.add(new Item(8, LocaleController.getString(R.string.Settings), settingsIcon));
+        if(navDrawerItems.getContacts()) items.add(new Item(ID_CONTACTS, LocaleController.getString(R.string.Contacts), contactsIcon));
+        if(navDrawerItems.getCalls()) items.add(new Item(ID_CALLS, LocaleController.getString(R.string.Calls), callsIcon));
+        if(navDrawerItems.getSavedMessages()) items.add(new Item(ID_SAVED_MESSAGES, LocaleController.getString(R.string.SavedMessages), savedIcon));
+        items.add(new Item(ID_DAHL_SETTINGS, LocaleController.getString(R.string.SettingsDahl), dahlSettingsIcon));
+        items.add(new Item(ID_SETTINGS, LocaleController.getString(R.string.Settings), settingsIcon));
         items.add(null); // divider
-        items.add(new Item(7, LocaleController.getString(R.string.InviteFriends), inviteIcon));
-        items.add(new Item(13, LocaleController.getString(R.string.TelegramFeatures), helpIcon));
+        if(navDrawerItems.getInviteFriends()) items.add(new Item(ID_INVITE_FRIENDS, LocaleController.getString(R.string.InviteFriends), inviteIcon));
+        if(navDrawerItems.getTelegramFeatures()) items.add(new Item(ID_TELEGRAM_FEATURES, LocaleController.getString(R.string.TelegramFeatures), helpIcon));
     }
 
     public boolean click(View view, int position) {

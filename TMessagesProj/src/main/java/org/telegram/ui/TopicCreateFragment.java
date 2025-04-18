@@ -34,6 +34,7 @@ import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.tgnet.tl.TL_stars;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarPopupWindow;
 import org.telegram.ui.ActionBar.AlertDialog;
@@ -221,7 +222,7 @@ public class TopicCreateFragment extends BaseFragment {
                             editForumRequest.title = topicName;
                             editForumRequest.flags |= 1;
                         }
-                        if (topicForEdit.icon_emoji_id != editForumRequest.icon_emoji_id) {
+                        if (topicForEdit.icon_emoji_id != selectedEmojiDocumentId) {
                             editForumRequest.icon_emoji_id = selectedEmojiDocumentId;
                             editForumRequest.flags |= 2;
                         }
@@ -426,7 +427,7 @@ public class TopicCreateFragment extends BaseFragment {
                     }
                 }
 
-                protected void onEmojiSelected(View view, Long documentId, TLRPC.Document document, Integer until) {
+                protected void onEmojiSelected(View view, Long documentId, TLRPC.Document document, TL_stars.TL_starGiftUnique gift, Integer until) {
                     boolean setIsFree = false;
                     if (!TextUtils.isEmpty(UserConfig.getInstance(currentAccount).defaultTopicIcons)) {
                         TLRPC.TL_messages_stickerSet stickerSet = getMediaDataController().getStickerSetByEmojiOrName(UserConfig.getInstance(currentAccount).defaultTopicIcons);

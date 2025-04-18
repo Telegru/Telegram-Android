@@ -68,6 +68,10 @@ import org.telegram.ui.Components.SlideChooseView;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+
+import ru.dahl.messenger.Extra;
+import ru.dahl.messenger.settings.DahlSettings;
 
 public class ProxyListActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate {
     private final static boolean IS_PROXY_ROTATION_AVAILABLE = true;
@@ -85,9 +89,11 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
     private boolean useProxyForCalls;
 
     private int rowCount;
+    private int useDahlProxyRow;
     private int useProxyRow;
     private int useProxyShadowRow;
     private int connectionsHeaderRow;
+    private int dahlProxyRow;
     private int proxyStartRow;
     private int proxyEndRow;
     private int proxyAddRow;
@@ -107,6 +113,8 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
     private List<SharedConfig.ProxyInfo> selectedItems = new ArrayList<>();
     private List<SharedConfig.ProxyInfo> proxyList = new ArrayList<>();
     private boolean wasCheckedAllList;
+
+    private final SharedConfig.ProxyInfo dahlProxy = new SharedConfig.ProxyInfo(Extra.PROXY_ADDRESS, Extra.PROXY_PORT, null, null, Extra.PROXY_SECRET);
 
     public class TextDetailProxyCell extends FrameLayout {
 
@@ -169,13 +177,19 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
         }
 
         public void setProxy(SharedConfig.ProxyInfo proxyInfo) {
-            textView.setText(proxyInfo.address + ":" + proxyInfo.port);
+            if(proxyInfo.getLink().equals(dahlProxy.getLink())){
+                textView.setText(LocaleController.getString(R.string.ProxyDahl));
+            }else {
+                textView.setText(proxyInfo.address + ":" + proxyInfo.port);
+            }
+            checkImageView.setVisibility(proxyInfo.getLink().equals(dahlProxy.getLink()) ? GONE : VISIBLE);
             currentInfo = proxyInfo;
         }
 
         public void updateStatus() {
             int colorKey;
-            if (SharedConfig.currentProxy == currentInfo && useProxySettings) {
+            SharedConfig.ProxyInfo current = SharedConfig.currentProxy;
+            if (current != null && (useProxySettings || DahlSettings.isProxyEnabled()) && current.getLink().equals(currentInfo.getLink())) {
                 if (currentConnectionState == ConnectionsManager.ConnectionStateConnected || currentConnectionState == ConnectionsManager.ConnectionStateUpdating) {
                     colorKey = Theme.key_windowBackgroundWhiteBlueText6;
                     if (currentInfo.ping != 0) {
@@ -219,6 +233,7 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                 return;
             }
             isSelectionEnabled = enabled;
+            boolean hideDetails = enabled || currentInfo!= null && currentInfo.getLink().equals(dahlProxy.getLink());
 
             float fromX = 0, toX = LocaleController.isRTL ? -AndroidUtilities.dp(32) : AndroidUtilities.dp(32);
             if (!animated) {
@@ -227,7 +242,7 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                 valueTextView.setTranslationX(x);
                 checkImageView.setTranslationX(x);
                 checkBox.setTranslationX((LocaleController.isRTL ? AndroidUtilities.dp(32) : -AndroidUtilities.dp(32)) + x);
-                checkImageView.setVisibility(enabled ? GONE : VISIBLE);
+                checkImageView.setVisibility(hideDetails ? GONE : VISIBLE);
                 checkImageView.setAlpha(1f);
                 checkImageView.setScaleX(1f);
                 checkImageView.setScaleY(1f);
@@ -264,7 +279,7 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                             checkBox.setVisibility(VISIBLE);
                         } else {
                             checkImageView.setAlpha(0f);
-                            checkImageView.setVisibility(VISIBLE);
+                            checkImageView.setVisibility(hideDetails ? GONE : VISIBLE);
                         }
                     }
 
@@ -336,7 +351,7 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.didUpdateConnectionState);
 
         final SharedPreferences preferences = MessagesController.getGlobalMainSettings();
-        useProxySettings = preferences.getBoolean("proxy_enabled", false) && !SharedConfig.proxyList.isEmpty();
+        useProxySettings = preferences.getBoolean("proxy_enabled", false) && !SharedConfig.proxyList.isEmpty() && !DahlSettings.isProxyEnabled();
         useProxyForCalls = preferences.getBoolean("proxy_enabled_calls", false);
 
         updateRows(true);
@@ -391,12 +406,26 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
         frameLayout.addView(listView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.TOP | Gravity.LEFT));
         listView.setAdapter(listAdapter);
         listView.setOnItemClickListener((view, position) -> {
-            if (position == useProxyRow) {
-                if (SharedConfig.currentProxy == null) {
+            if (position == useDahlProxyRow) {
+                boolean enable = !DahlSettings.isProxyEnabled();
+                DahlSettings.setProxyEnabled(enable);
+                useProxySettings = false;
+                updateRows(true);
+
+                NotificationCenter.getGlobalInstance().removeObserver(ProxyListActivity.this, NotificationCenter.proxySettingsChanged);
+                NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.proxySettingsChanged);
+                NotificationCenter.getGlobalInstance().addObserver(ProxyListActivity.this, NotificationCenter.proxySettingsChanged);
+
+                updateProxyStatuses();
+            } else if (position == useProxyRow) {
+                SharedConfig.ProxyInfo currentProxy = SharedConfig.currentProxy;
+                if (currentProxy == null || currentProxy.getLink().equals(dahlProxy.getLink())) {
                     if (!proxyList.isEmpty()) {
                         SharedConfig.currentProxy = proxyList.get(0);
 
                         if (!useProxySettings) {
+                            DahlSettings.setProxyEnabled(false);
+
                             SharedPreferences preferences = MessagesController.getGlobalMainSettings();
                             SharedPreferences.Editor editor = MessagesController.getGlobalMainSettings().edit();
                             editor.putString("proxy_ip", SharedConfig.currentProxy.address);
@@ -436,13 +465,7 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                 NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.proxySettingsChanged);
                 NotificationCenter.getGlobalInstance().addObserver(ProxyListActivity.this, NotificationCenter.proxySettingsChanged);
 
-                for (int a = proxyStartRow; a < proxyEndRow; a++) {
-                    RecyclerListView.Holder holder = (RecyclerListView.Holder) listView.findViewHolderForAdapterPosition(a);
-                    if (holder != null) {
-                        TextDetailProxyCell cell = (TextDetailProxyCell) holder.itemView;
-                        cell.updateStatus();
-                    }
-                }
+                updateProxyStatuses();
             } else if (position == rotationRow) {
                 SharedConfig.proxyRotationEnabled = !SharedConfig.proxyRotationEnabled;
                 TextCheckCell textCheckCell = (TextCheckCell) view;
@@ -477,14 +500,7 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                 }
                 editor.commit();
                 SharedConfig.currentProxy = info;
-                for (int a = proxyStartRow; a < proxyEndRow; a++) {
-                    RecyclerListView.Holder holder = (RecyclerListView.Holder) listView.findViewHolderForAdapterPosition(a);
-                    if (holder != null) {
-                        TextDetailProxyCell cell = (TextDetailProxyCell) holder.itemView;
-                        cell.setChecked(cell.currentInfo == info);
-                        cell.updateStatus();
-                    }
-                }
+                updateProxyStatuses();
                 updateRows(false);
                 RecyclerListView.Holder holder = (RecyclerListView.Holder) listView.findViewHolderForAdapterPosition(useProxyRow);
                 if (holder != null) {
@@ -521,6 +537,10 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                 if (button != null) {
                     button.setTextColor(Theme.getColor(Theme.key_text_RedBold));
                 }
+            } else if(position == dahlProxyRow){
+                useProxySettings = false;
+                DahlSettings.setProxyEnabled(true);
+                updateRows(true);
             }
         });
         listView.setOnItemLongClickListener((view, position) -> {
@@ -621,10 +641,29 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
         return true;
     }
 
+    private void updateProxyStatuses(){
+        SharedConfig.ProxyInfo info = SharedConfig.currentProxy;
+        for (int a = proxyStartRow; a < proxyEndRow; a++) {
+            RecyclerListView.Holder holder = (RecyclerListView.Holder) listView.findViewHolderForAdapterPosition(a);
+            if (holder != null) {
+                TextDetailProxyCell cell = (TextDetailProxyCell) holder.itemView;
+                cell.setChecked(cell.currentInfo == info);
+                cell.updateStatus();
+            }
+        }
+        RecyclerListView.Holder dahlHolder = (RecyclerListView.Holder) listView.findViewHolderForAdapterPosition(dahlProxyRow);
+        if(dahlHolder != null){
+            TextDetailProxyCell cell = (TextDetailProxyCell) dahlHolder.itemView;
+            cell.updateStatus();
+        }
+    }
+
     private void updateRows(boolean notify) {
         rowCount = 0;
+        useDahlProxyRow = rowCount++;
+
         useProxyRow = rowCount++;
-        if (useProxySettings && SharedConfig.currentProxy != null && SharedConfig.proxyList.size() > 1 && IS_PROXY_ROTATION_AVAILABLE) {
+        if ((useProxySettings || DahlSettings.isProxyEnabled()) && SharedConfig.currentProxy != null && SharedConfig.proxyList.size() > 1 && IS_PROXY_ROTATION_AVAILABLE) {
             rotationRow = rowCount++;
             if (SharedConfig.proxyRotationEnabled) {
                 rotationTimeoutRow = rowCount++;
@@ -643,11 +682,19 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
         } else {
             useProxyShadowRow = -1;
         }
+
         connectionsHeaderRow = rowCount++;
+
+        dahlProxyRow = rowCount++;
 
         if (notify) {
             proxyList.clear();
-            proxyList.addAll(SharedConfig.proxyList);
+
+            for(SharedConfig.ProxyInfo proxy: SharedConfig.proxyList){
+                if(!Objects.equals(proxy.getLink(), dahlProxy.getLink())){
+                    proxyList.add(proxy);
+                }
+            }
 
             boolean checking = false;
             if (!wasCheckedAllList) {
@@ -656,6 +703,9 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                         checking = true;
                         break;
                     }
+                }
+                if(dahlProxy.checking){
+                    checking = true;
                 }
                 if (!checking) {
                     wasCheckedAllList = true;
@@ -716,6 +766,9 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
     }
 
     private void checkProxyList() {
+        List<SharedConfig.ProxyInfo> proxyList = new ArrayList<>(this.proxyList.size() + 1);
+        proxyList.add(dahlProxy);
+        proxyList.addAll(this.proxyList);
         for (int a = 0, count = proxyList.size(); a < count; a++) {
             final SharedConfig.ProxyInfo proxyInfo = proxyList.get(a);
             if (proxyInfo.checking || SystemClock.elapsedRealtime() - proxyInfo.availableCheckTime < 2 * 60 * 1000) {
@@ -770,14 +823,7 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
             if (currentConnectionState != state) {
                 currentConnectionState = state;
                 if (listView != null && SharedConfig.currentProxy != null) {
-                    int idx = proxyList.indexOf(SharedConfig.currentProxy);
-                    if (idx >= 0) {
-                        RecyclerListView.Holder holder = (RecyclerListView.Holder) listView.findViewHolderForAdapterPosition(idx + proxyStartRow);
-                        if (holder != null) {
-                            TextDetailProxyCell cell = (TextDetailProxyCell) holder.itemView;
-                            cell.updateStatus();
-                        }
-                    }
+                    updateProxyStatuses();
 
                     if (currentConnectionState == ConnectionsManager.ConnectionStateConnected) {
                         updateRows(true);
@@ -787,12 +833,20 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
         } else if (id == NotificationCenter.proxyCheckDone) {
             if (listView != null) {
                 SharedConfig.ProxyInfo proxyInfo = (SharedConfig.ProxyInfo) args[0];
-                int idx = proxyList.indexOf(proxyInfo);
-                if (idx >= 0) {
-                    RecyclerListView.Holder holder = (RecyclerListView.Holder) listView.findViewHolderForAdapterPosition(idx + proxyStartRow);
+                if(proxyInfo != null && proxyInfo.getLink().equals(dahlProxy.getLink())){
+                    RecyclerListView.Holder holder = (RecyclerListView.Holder) listView.findViewHolderForAdapterPosition(dahlProxyRow);
                     if (holder != null) {
                         TextDetailProxyCell cell = (TextDetailProxyCell) holder.itemView;
                         cell.updateStatus();
+                    }
+                }else {
+                    int idx = proxyList.indexOf(proxyInfo);
+                    if (idx >= 0) {
+                        RecyclerListView.Holder holder = (RecyclerListView.Holder) listView.findViewHolderForAdapterPosition(idx + proxyStartRow);
+                        if (holder != null) {
+                            TextDetailProxyCell cell = (TextDetailProxyCell) holder.itemView;
+                            cell.updateStatus();
+                        }
                     }
                 }
 
@@ -803,6 +857,9 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                             checking = true;
                             break;
                         }
+                    }
+                    if(dahlProxy.checking){
+                        checking = true;
                     }
                     if (!checking) {
                         wasCheckedAllList = true;
@@ -817,12 +874,13 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
 
     private class ListAdapter extends RecyclerListView.SelectionAdapter {
         private final static int VIEW_TYPE_SHADOW = 0,
-            VIEW_TYPE_TEXT_SETTING = 1,
-            VIEW_TYPE_HEADER = 2,
-            VIEW_TYPE_TEXT_CHECK = 3,
-            VIEW_TYPE_INFO = 4,
-            VIEW_TYPE_PROXY_DETAIL = 5,
-            VIEW_TYPE_SLIDE_CHOOSER = 6;
+                VIEW_TYPE_TEXT_SETTING = 1,
+                VIEW_TYPE_HEADER = 2,
+                VIEW_TYPE_TEXT_CHECK = 3,
+                VIEW_TYPE_INFO = 4,
+                VIEW_TYPE_PROXY_DETAIL = 5,
+                VIEW_TYPE_SLIDE_CHOOSER = 6,
+                VIEW_TYPE_DAHL_PROXY_DETAIL = 7;
 
         public static final int PAYLOAD_CHECKED_CHANGED = 0;
         public static final int PAYLOAD_SELECTION_CHANGED = 1;
@@ -907,8 +965,10 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                 }
                 case VIEW_TYPE_TEXT_CHECK: {
                     TextCheckCell checkCell = (TextCheckCell) holder.itemView;
-                    if (position == useProxyRow) {
-                        checkCell.setTextAndCheck(LocaleController.getString(R.string.UseProxySettings), useProxySettings, rotationRow != -1);
+                    if (position == useDahlProxyRow) {
+                        checkCell.setTextAndCheck(LocaleController.getString(R.string.ProxyDahl), DahlSettings.isProxyEnabled(), true);
+                    } else if (position == useProxyRow) {
+                        checkCell.setTextAndCheck(LocaleController.getString(R.string.DahlUseYourProxySettings), useProxySettings, rotationRow != -1);
                     } else if (position == callsRow) {
                         checkCell.setTextAndCheck(LocaleController.getString(R.string.UseProxyForCalls), useProxyForCalls, false);
                     } else if (position == rotationRow) {
@@ -952,6 +1012,15 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                     }
                     break;
                 }
+                case VIEW_TYPE_DAHL_PROXY_DETAIL: {
+                    TextDetailProxyCell cell = (TextDetailProxyCell) holder.itemView;
+                    cell.setProxy(dahlProxy);
+                    SharedConfig.ProxyInfo current = SharedConfig.currentProxy;
+                    cell.setChecked(current != null && current.getLink().equals(dahlProxy.getLink()));
+                    cell.setItemSelected(false, false);
+                    cell.setSelectionEnabled(false, false);
+                    break;
+                }
             }
         }
 
@@ -968,6 +1037,9 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                 }
             } else if (holder.getItemViewType() == VIEW_TYPE_TEXT_CHECK && payloads.contains(PAYLOAD_CHECKED_CHANGED)) {
                 TextCheckCell checkCell = (TextCheckCell) holder.itemView;
+                if (position == useDahlProxyRow) {
+                    checkCell.setChecked(DahlSettings.isProxyEnabled());
+                }
                 if (position == useProxyRow) {
                     checkCell.setChecked(useProxySettings);
                 } else if (position == callsRow) {
@@ -986,7 +1058,9 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
             if (viewType == VIEW_TYPE_TEXT_CHECK) {
                 TextCheckCell checkCell = (TextCheckCell) holder.itemView;
                 int position = holder.getAdapterPosition();
-                if (position == useProxyRow) {
+                if (position == useDahlProxyRow) {
+                    checkCell.setChecked(DahlSettings.isProxyEnabled());
+                } else if (position == useProxyRow) {
                     checkCell.setChecked(useProxySettings);
                 } else if (position == callsRow) {
                     checkCell.setChecked(useProxyForCalls);
@@ -999,7 +1073,7 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
         @Override
         public boolean isEnabled(RecyclerView.ViewHolder holder) {
             int position = holder.getAdapterPosition();
-            return position == useProxyRow || position == rotationRow || position == callsRow || position == proxyAddRow || position == deleteAllRow || position >= proxyStartRow && position < proxyEndRow;
+            return position == useDahlProxyRow || position == useProxyRow || position == rotationRow || position == callsRow || position == proxyAddRow || position == deleteAllRow || position >= proxyStartRow && position < proxyEndRow;
         }
 
         @Override
@@ -1030,6 +1104,7 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                     view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
                     break;
                 case VIEW_TYPE_PROXY_DETAIL:
+                case VIEW_TYPE_DAHL_PROXY_DETAIL:
                 default:
                     view = new TextDetailProxyCell(mContext);
                     view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
@@ -1062,6 +1137,10 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                 return -10;
             } else if (position == rotationTimeoutInfoRow) {
                 return -11;
+            } else if (position == useDahlProxyRow) {
+                return -12;
+            }else if(position == dahlProxyRow){
+                return -13;
             } else if (position >= proxyStartRow && position < proxyEndRow) {
                 return proxyList.get(position - proxyStartRow).hashCode();
             } else {
@@ -1075,7 +1154,7 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                 return VIEW_TYPE_SHADOW;
             } else if (position == proxyAddRow || position == deleteAllRow) {
                 return VIEW_TYPE_TEXT_SETTING;
-            } else if (position == useProxyRow || position == rotationRow || position == callsRow) {
+            } else if (position == useProxyRow || position == rotationRow || position == callsRow || position == useDahlProxyRow) {
                 return VIEW_TYPE_TEXT_CHECK;
             } else if (position == connectionsHeaderRow) {
                 return VIEW_TYPE_HEADER;
@@ -1083,6 +1162,8 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                 return VIEW_TYPE_SLIDE_CHOOSER;
             } else if (position >= proxyStartRow && position < proxyEndRow) {
                 return VIEW_TYPE_PROXY_DETAIL;
+            } else if(position == dahlProxyRow){
+                return VIEW_TYPE_DAHL_PROXY_DETAIL;
             } else {
                 return VIEW_TYPE_INFO;
             }

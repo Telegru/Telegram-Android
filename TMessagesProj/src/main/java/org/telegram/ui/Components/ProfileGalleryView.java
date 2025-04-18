@@ -41,6 +41,8 @@ import org.telegram.ui.ProfileActivity;
 
 import java.util.ArrayList;
 
+import ru.dahl.messenger.settings.DahlSettings;
+
 public class ProfileGalleryView extends CircularViewPager implements NotificationCenter.NotificationCenterDelegate {
 
     private final PointF downPoint = new PointF();
@@ -1159,7 +1161,7 @@ public class ProfileGalleryView extends CircularViewPager implements Notificatio
                     animatedFileDrawable.addSecondParentView(item.imageView);
                     animatedFileDrawable.setInvalidateParentViewWithSecond(true);
                 } else if (imageLocationPosition >= 0 && imageLocationPosition < videoLocations.size()) {
-                    ImageLocation videoLocation = videoLocations.get(imageLocationPosition);
+                    ImageLocation videoLocation = DahlSettings.isAnimatedAvatars() ? videoLocations.get(imageLocationPosition) : null;
                     item.imageView.isVideo = videoLocation != null;
                     needProgress = vectorAvatars.get(imageLocationPosition) == null;
                     String filter;
@@ -1172,16 +1174,16 @@ public class ProfileGalleryView extends CircularViewPager implements Notificatio
                     Bitmap thumb = (parentAvatarImageView == null || !createThumbFromParent) ? null : parentAvatarImageView.getImageReceiver().getBitmap();
                     String parent = "avatar_" + dialogId;
                     if (thumb != null && vectorAvatars.get(imageLocationPosition) == null) {
-                        item.imageView.setImageMedia(videoLocations.get(imageLocationPosition), filter, imagesLocations.get(imageLocationPosition), null, thumb, imagesLocationsSizes.get(imageLocationPosition), 1, parent);
+                        item.imageView.setImageMedia(videoLocation, filter, imagesLocations.get(imageLocationPosition), null, thumb, imagesLocationsSizes.get(imageLocationPosition), 1, parent);
                     } else if (uploadingImageLocation != null) {
-                        item.imageView.setImageMedia(vectorAvatars.get(imageLocationPosition), videoLocations.get(imageLocationPosition), filter, imagesLocations.get(imageLocationPosition), null, uploadingImageLocation, null, null, imagesLocationsSizes.get(imageLocationPosition), 1, parent);
+                        item.imageView.setImageMedia(vectorAvatars.get(imageLocationPosition), videoLocation, filter, imagesLocations.get(imageLocationPosition), null, uploadingImageLocation, null, null, imagesLocationsSizes.get(imageLocationPosition), 1, parent);
                     } else {
                         String thumbFilter = location != null && location.photoSize instanceof TLRPC.TL_photoStrippedSize ? "b" : null;
                         item.imageView.setImageMedia(vectorAvatars.get(imageLocationPosition), videoLocation, null, imagesLocations.get(imageLocationPosition), null, thumbsLocations.get(imageLocationPosition), thumbFilter, null, imagesLocationsSizes.get(imageLocationPosition), 1, parent);
                     }
                 }
             } else if (imageLocationPosition >= 0 && imageLocationPosition < videoLocations.size()) {
-                final ImageLocation videoLocation = videoLocations.get(imageLocationPosition);
+                final ImageLocation videoLocation = DahlSettings.isAnimatedAvatars() ? videoLocations.get(imageLocationPosition) : null;
                 item.imageView.isVideo = videoLocation != null;
                 needProgress = vectorAvatars.get(imageLocationPosition) == null;
                 ImageLocation location = thumbsLocations.get(imageLocationPosition);

@@ -79,7 +79,7 @@ public class ActionBar extends FrameLayout {
     public ImageView backButtonImageView;
     private BackupImageView avatarSearchImageView;
     private Drawable backButtonDrawable;
-    private SimpleTextView[] titleTextView = new SimpleTextView[2];
+    private final SimpleTextView[] titleTextView = new SimpleTextView[2];
     private SimpleTextView subtitleTextView;
     private SimpleTextView additionalSubtitleTextView;
     private View actionModeTop;
@@ -420,6 +420,7 @@ public class ActionBar extends FrameLayout {
         } else {
             titleTextView[i].setTextColor(getThemedColor(Theme.key_actionBarDefaultTitle));
         }
+        titleTextView[i].setEmojiColor(titleTextView[i].getTextColor());
         titleTextView[i].setTypeface(AndroidUtilities.bold());
         titleTextView[i].setDrawablePadding(dp(4));
         titleTextView[i].setPadding(0, dp(8), 0, dp(8));
@@ -474,8 +475,10 @@ public class ActionBar extends FrameLayout {
         }
         titleColorToSet = color;
         titleTextView[0].setTextColor(color);
+        titleTextView[0].setEmojiColor(color);
         if (titleTextView[1] != null) {
             titleTextView[1].setTextColor(color);
+            titleTextView[1].setEmojiColor(color);
         }
     }
 
@@ -520,6 +523,15 @@ public class ActionBar extends FrameLayout {
 
     public SimpleTextView getTitleTextView() {
         return titleTextView[0];
+    }
+
+    public Paint.FontMetricsInt getTitleFontMetricsInt() {
+        if (titleTextView[0] == null) {
+            TextPaint paint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+            paint.setTextSize(dp(!AndroidUtilities.isTablet() && getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? 18 : 20));
+            return paint.getFontMetricsInt();
+        }
+        return titleTextView[0].getPaint().getFontMetricsInt();
     }
 
     public SimpleTextView getTitleTextView2() {
@@ -642,20 +654,6 @@ public class ActionBar extends FrameLayout {
 //        }
 
         return actionMode;
-    }
-
-    public void onDrawCrossfadeBackground(Canvas canvas) {
-        if (blurredBackground && actionBarColor != Color.TRANSPARENT) {
-            rectTmp.set(0, 0, getMeasuredWidth(), getMeasuredHeight());
-            blurScrimPaint.setColor(actionBarColor);
-            contentView.drawBlurRect(canvas, getY(), rectTmp, blurScrimPaint, true);
-        } else {
-            Drawable drawable = getBackground();
-            if (drawable != null) {
-                drawable.setBounds(0, 0, getWidth(), getHeight());
-                drawable.draw(canvas);
-            }
-        }
     }
 
     public void onDrawCrossfadeContent(Canvas canvas, boolean front, boolean hideBackDrawable, float progress) {

@@ -66,6 +66,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.dynamicanimation.animation.FloatValueHolder;
 import androidx.dynamicanimation.animation.SpringAnimation;
@@ -114,6 +115,7 @@ import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.RequestDelegate;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.tgnet.tl.TL_account;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
 import org.telegram.ui.ActionBar.ActionBarMenuItem;
@@ -143,7 +145,6 @@ import org.telegram.ui.Components.HintEditText;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.TypefaceSpan;
 import org.telegram.ui.Components.URLSpanNoUnderline;
-import org.telegram.ui.Components.UndoView;
 import org.telegram.ui.Stars.StarsIntroActivity;
 
 import java.io.BufferedReader;
@@ -255,7 +256,7 @@ public class PaymentFormActivity extends BaseFragment implements NotificationCen
 
     private float shiftDp = -4.5f;
 
-    private TLRPC.account_Password currentPassword;
+    private TL_account.Password currentPassword;
     private boolean waitingForEmail;
     private int emailCodeLength = 6;
     private Runnable shortPollRunnable;
@@ -353,12 +354,13 @@ public class PaymentFormActivity extends BaseFragment implements NotificationCen
 
         }
 
-        default void currentPasswordUpdated(TLRPC.account_Password password) {
+        default void currentPasswordUpdated(TL_account.Password password) {
 
         }
     }
 
     private class TelegramWebviewProxy {
+        @Keep
         @JavascriptInterface
         public void postEvent(final String eventName, final String eventData) {
             AndroidUtilities.runOnUIThread(() -> {
@@ -456,7 +458,7 @@ public class PaymentFormActivity extends BaseFragment implements NotificationCen
         paymentFormCallback = callback;
     }
 
-    private void setCurrentPassword(TLRPC.account_Password password) {
+    private void setCurrentPassword(TL_account.Password password) {
         if (password != null && password.has_password) {
             if (getParentActivity() == null) {
                 return;
@@ -1179,15 +1181,20 @@ public class PaymentFormActivity extends BaseFragment implements NotificationCen
                 webView.setWebViewClient(new WebViewClient() {
                     @Override
                     public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
-                        if (!AndroidUtilities.isSafeToShow(getContext())) {
+                        try {
+                            if (!AndroidUtilities.isSafeToShow(getContext())) {
+                                return true;
+                            }
+                            new AlertDialog.Builder(getContext(), resourcesProvider)
+                                    .setTitle(getString(R.string.ChromeCrashTitle))
+                                    .setMessage(AndroidUtilities.replaceSingleTag(getString(R.string.ChromeCrashMessage), () -> Browser.openUrl(getContext(), "https://play.google.com/store/apps/details?id=com.google.android.webview")))
+                                    .setPositiveButton(getString(R.string.OK), null)
+                                    .show();
                             return true;
+                        } catch (Exception e) {
+                            FileLog.e(e);
+                            return false;
                         }
-                        new AlertDialog.Builder(getContext(), resourcesProvider)
-                                .setTitle(getString(R.string.ChromeCrashTitle))
-                                .setMessage(AndroidUtilities.replaceSingleTag(getString(R.string.ChromeCrashMessage), () -> Browser.openUrl(getContext(), "https://play.google.com/store/apps/details?id=com.google.android.webview")))
-                                .setPositiveButton(getString(R.string.OK), null)
-                                .show();
-                        return true;
                     }
 
                     @Override
@@ -2432,15 +2439,20 @@ public class PaymentFormActivity extends BaseFragment implements NotificationCen
                 webView.setWebViewClient(new WebViewClient() {
                     @Override
                     public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
-                        if (!AndroidUtilities.isSafeToShow(getContext())) {
+                        try {
+                            if (!AndroidUtilities.isSafeToShow(getContext())) {
+                                return true;
+                            }
+                            new AlertDialog.Builder(getContext(), resourcesProvider)
+                                    .setTitle(getString(R.string.ChromeCrashTitle))
+                                    .setMessage(AndroidUtilities.replaceSingleTag(getString(R.string.ChromeCrashMessage), () -> Browser.openUrl(getContext(), "https://play.google.com/store/apps/details?id=com.google.android.webview")))
+                                    .setPositiveButton(getString(R.string.OK), null)
+                                    .show();
                             return true;
+                        } catch (Exception e) {
+                            FileLog.e(e);
+                            return false;
                         }
-                        new AlertDialog.Builder(getContext(), resourcesProvider)
-                                .setTitle(getString(R.string.ChromeCrashTitle))
-                                .setMessage(AndroidUtilities.replaceSingleTag(getString(R.string.ChromeCrashMessage), () -> Browser.openUrl(getContext(), "https://play.google.com/store/apps/details?id=com.google.android.webview")))
-                                .setPositiveButton(getString(R.string.OK), null)
-                                .show();
-                        return true;
                     }
 
                     @Override
@@ -2575,7 +2587,7 @@ public class PaymentFormActivity extends BaseFragment implements NotificationCen
             settingsCell[1].setText(LocaleController.getString(R.string.ResendCode), true);
             linearLayout2.addView(settingsCell[1], LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
             settingsCell[1].setOnClickListener(v -> {
-                TLRPC.TL_account_resendPasswordEmail req = new TLRPC.TL_account_resendPasswordEmail();
+                TL_account.resendPasswordEmail req = new TL_account.resendPasswordEmail();
                 ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> {
 
                 });
@@ -3005,11 +3017,11 @@ public class PaymentFormActivity extends BaseFragment implements NotificationCen
             return;
         }
         loadingPasswordInfo = true;
-        TLRPC.TL_account_getPassword req = new TLRPC.TL_account_getPassword();
+        TL_account.getPassword req = new TL_account.getPassword();
         ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
             loadingPasswordInfo = false;
             if (error == null) {
-                currentPassword = (TLRPC.account_Password) response;
+                currentPassword = (TL_account.Password) response;
                 if (!TwoStepVerificationActivity.canHandleCurrentPassword(currentPassword, false)) {
                     AlertsCreator.showUpdateAppAlert(getParentActivity(), LocaleController.getString(R.string.UpdateAppAlert), true);
                     return;
@@ -3417,7 +3429,7 @@ public class PaymentFormActivity extends BaseFragment implements NotificationCen
                         }
 
                         @Override
-                        public void currentPasswordUpdated(TLRPC.account_Password password) {
+                        public void currentPasswordUpdated(TL_account.Password password) {
                             currentPassword = password;
                         }
                     });
@@ -3598,7 +3610,7 @@ public class PaymentFormActivity extends BaseFragment implements NotificationCen
                 return;
             }
             showEditDoneProgress(true, true);
-            TLRPC.TL_account_confirmPasswordEmail req = new TLRPC.TL_account_confirmPasswordEmail();
+            TL_account.confirmPasswordEmail req = new TL_account.confirmPasswordEmail();
             req.code = code;
             ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
                 showEditDoneProgress(true, false);
@@ -3630,14 +3642,14 @@ public class PaymentFormActivity extends BaseFragment implements NotificationCen
                 }
             }), ConnectionsManager.RequestFlagFailOnServerErrors | ConnectionsManager.RequestFlagWithoutLogin);
         } else {
-            final TLRPC.TL_account_updatePasswordSettings req = new TLRPC.TL_account_updatePasswordSettings();
+            final TL_account.updatePasswordSettings req = new TL_account.updatePasswordSettings();
             final String email;
             final String firstPassword;
             if (clear) {
                 doneItem.setVisibility(View.VISIBLE);
                 email = null;
                 firstPassword = null;
-                req.new_settings = new TLRPC.TL_account_passwordInputSettings();
+                req.new_settings = new TL_account.passwordInputSettings();
                 req.new_settings.flags = 2;
                 req.new_settings.email = "";
                 req.password = new TLRPC.TL_inputCheckPasswordEmpty();
@@ -3670,7 +3682,7 @@ public class PaymentFormActivity extends BaseFragment implements NotificationCen
                 }
 
                 req.password = new TLRPC.TL_inputCheckPasswordEmpty();
-                req.new_settings = new TLRPC.TL_account_passwordInputSettings();
+                req.new_settings = new TL_account.passwordInputSettings();
                 req.new_settings.flags |= 1;
                 req.new_settings.hint = "";
                 req.new_settings.new_algo = currentPassword.new_algo;
@@ -3682,10 +3694,10 @@ public class PaymentFormActivity extends BaseFragment implements NotificationCen
             Utilities.globalQueue.postRunnable(() -> {
                 RequestDelegate requestDelegate = (response, error) -> AndroidUtilities.runOnUIThread(() -> {
                     if (error != null && "SRP_ID_INVALID".equals(error.text)) {
-                        TLRPC.TL_account_getPassword getPasswordReq = new TLRPC.TL_account_getPassword();
+                        TL_account.getPassword getPasswordReq = new TL_account.getPassword();
                         ConnectionsManager.getInstance(currentAccount).sendRequest(getPasswordReq, (response2, error2) -> AndroidUtilities.runOnUIThread(() -> {
                             if (error2 == null) {
-                                currentPassword = (TLRPC.account_Password) response2;
+                                currentPassword = (TL_account.Password) response2;
                                 TwoStepVerificationActivity.initPasswordNewAlgo(currentPassword);
                                 sendSavePassword(clear);
                             }
@@ -3855,8 +3867,8 @@ public class PaymentFormActivity extends BaseFragment implements NotificationCen
                                 try {
                                     JSONObject jsonObject2 = new JSONObject(paymentForm.native_params.data);
                                     overrideSmartGlocalConnectionUrl = jsonObject2.getString("tokenize_url");
-                                    if (overrideSmartGlocalConnectionUrl != null && (
-                                        !overrideSmartGlocalConnectionUrl.startsWith("https://") ||
+                                    if (overrideSmartGlocalConnectionUrl != null && !(
+                                        overrideSmartGlocalConnectionUrl.startsWith("https://") &&
                                         overrideSmartGlocalConnectionUrl.endsWith(".smart-glocal.com/cds/v1/tokenize/card")
                                     )) {
                                         overrideSmartGlocalConnectionUrl = null;
@@ -4245,9 +4257,6 @@ public class PaymentFormActivity extends BaseFragment implements NotificationCen
 
                                     paymentStatusSent = true;
                                     invoiceStatus = InvoiceStatus.PAID;
-                                    if (paymentFormCallback != null) {
-                                        paymentFormCallback.onInvoiceStatusChanged(invoiceStatus);
-                                    }
 
                                     onCheckoutSuccess(parentLayout, parentActivity);
 
@@ -4437,10 +4446,10 @@ public class PaymentFormActivity extends BaseFragment implements NotificationCen
         final String password = inputFields[FIELD_SAVEDPASSWORD].getText().toString();
         showEditDoneProgress(true, true);
         setDonePressed(true);
-        final TLRPC.TL_account_getPassword req = new TLRPC.TL_account_getPassword();
+        final TL_account.getPassword req = new TL_account.getPassword();
         ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
             if (error == null) {
-                TLRPC.account_Password currentPassword = (TLRPC.account_Password) response;
+                TL_account.Password currentPassword = (TL_account.Password) response;
                 if (!TwoStepVerificationActivity.canHandleCurrentPassword(currentPassword, false)) {
                     AlertsCreator.showUpdateAppAlert(getParentActivity(), LocaleController.getString(R.string.UpdateAppAlert), true);
                     return;
@@ -4460,7 +4469,7 @@ public class PaymentFormActivity extends BaseFragment implements NotificationCen
                             x_bytes = null;
                         }
 
-                        final TLRPC.TL_account_getTmpPassword req1 = new TLRPC.TL_account_getTmpPassword();
+                        final TL_account.getTmpPassword req1 = new TL_account.getTmpPassword();
                         req1.period = 60 * 30;
 
                         RequestDelegate requestDelegate = (response1, error1) -> AndroidUtilities.runOnUIThread(() -> {
@@ -4468,7 +4477,7 @@ public class PaymentFormActivity extends BaseFragment implements NotificationCen
                             setDonePressed(false);
                             if (response1 != null) {
                                 passwordOk = true;
-                                UserConfig.getInstance(currentAccount).tmpPassword = (TLRPC.TL_account_tmpPassword) response1;
+                                UserConfig.getInstance(currentAccount).tmpPassword = (TL_account.tmpPassword) response1;
                                 UserConfig.getInstance(currentAccount).saveConfig(false);
                                 goToNextStep();
                             } else {

@@ -102,6 +102,7 @@ import org.telegram.messenger.Utilities;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.tgnet.Vector;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
 import org.telegram.ui.ActionBar.ActionBarMenuItem;
@@ -253,7 +254,7 @@ public class ChannelAdminLogActivity extends BaseFragment implements Notificatio
     private PhotoViewer.PhotoViewerProvider provider = new PhotoViewer.EmptyPhotoViewerProvider() {
 
         @Override
-        public PhotoViewer.PlaceProviderObject getPlaceForPhoto(MessageObject messageObject, TLRPC.FileLocation fileLocation, int index, boolean needPreview) {
+        public PhotoViewer.PlaceProviderObject getPlaceForPhoto(MessageObject messageObject, TLRPC.FileLocation fileLocation, int index, boolean needPreview, boolean closing) {
             int count = chatListView.getChildCount();
 
             for (int a = 0; a < count; a++) {
@@ -1666,7 +1667,7 @@ public class ChannelAdminLogActivity extends BaseFragment implements Notificatio
                     stickerSet = action.prev_stickerset;
                 }
                 if (stickerSet != null) {
-                    showDialog(new StickersAlert(getParentActivity(), ChannelAdminLogActivity.this, stickerSet, null, null));
+                    showDialog(new StickersAlert(getParentActivity(), ChannelAdminLogActivity.this, stickerSet, null, null, false));
                     return true;
                 }
             } else if (selectedObject.currentEvent != null && selectedObject.currentEvent.action instanceof TLRPC.TL_channelAdminLogEventActionChangeEmojiStickerSet) {
@@ -2209,7 +2210,7 @@ public class ChannelAdminLogActivity extends BaseFragment implements Notificatio
                 break;
             }
             case OPTION_SAVE_STICKER: {
-                showDialog(new StickersAlert(getParentActivity(), this, selectedObject.getInputStickerSet(), null, null));
+                showDialog(new StickersAlert(getParentActivity(), this, selectedObject.getInputStickerSet(), null, null, false));
                 break;
             }
             case OPTION_SAVE_TO_DOWNLOADS_OR_MUSIC: {
@@ -2271,7 +2272,7 @@ public class ChannelAdminLogActivity extends BaseFragment implements Notificatio
                 getConnectionsManager().sendRequest(req, (res, err) -> {
                     AndroidUtilities.runOnUIThread(() -> {
                         if (res instanceof TLRPC.TL_boolTrue) {
-                            BulletinFactory.of(this).createSimpleBulletin(R.raw.msg_antispam, getString("ChannelAntiSpamFalsePositiveReported", R.string.ChannelAntiSpamFalsePositiveReported)).show();
+                            BulletinFactory.of(this).createSimpleBulletin(R.raw.msg_antispam, getString(R.string.ChannelAntiSpamFalsePositiveReported)).show();
                         } else if (res instanceof TLRPC.TL_boolFalse) {
                             BulletinFactory.of(this).createSimpleBulletin(R.raw.error, getString("UnknownError", R.string.UnknownError)).show();
                         } else {
@@ -2427,8 +2428,8 @@ public class ChannelAdminLogActivity extends BaseFragment implements Notificatio
         inputUser.user_id = userId;
         req.id.add(inputUser);
         ConnectionsManager.getInstance(currentAccount).sendRequest(req, (res, err) -> {
-            if (res instanceof TLRPC.Vector) {
-                ArrayList<Object> objects = ((TLRPC.Vector) res).objects;
+            if (res instanceof Vector) {
+                ArrayList<Object> objects = ((Vector) res).objects;
                 ArrayList<TLRPC.User> users = new ArrayList<>();
                 for (int i = 0; i < objects.size(); ++i) {
                     if (objects.get(i) instanceof TLRPC.User) {
@@ -3081,7 +3082,7 @@ public class ChannelAdminLogActivity extends BaseFragment implements Notificatio
                     }
 
                     @Override
-                    public void didPressReplyMessage(ChatMessageCell cell, int id) {
+                    public void didPressReplyMessage(ChatMessageCell cell, int id, float x, float y, boolean longpress) {
                         MessageObject messageObject = cell.getMessageObject();
                         MessageObject reply = messageObject.replyMessageObject;
                         if (reply.getDialogId() == -currentChat.id) {
@@ -3105,10 +3106,10 @@ public class ChannelAdminLogActivity extends BaseFragment implements Notificatio
                     }
 
                     @Override
-                    public void didPressImage(ChatMessageCell cell, float x, float y) {
+                    public void didPressImage(ChatMessageCell cell, float x, float y, boolean fullPreview) {
                         MessageObject message = cell.getMessageObject();
                         if (message.getInputStickerSet() != null) {
-                            showDialog(new StickersAlert(getParentActivity(), ChannelAdminLogActivity.this, message.getInputStickerSet(), null, null));
+                            showDialog(new StickersAlert(getParentActivity(), ChannelAdminLogActivity.this, message.getInputStickerSet(), null, null, false));
                         } else if (message.isVideo() || message.type == MessageObject.TYPE_PHOTO || message.type == MessageObject.TYPE_TEXT && !message.isWebpageDocument() || message.isGif()) {
                             PhotoViewer.getInstance().setParentActivity(ChannelAdminLogActivity.this);
                             PhotoViewer.getInstance().openPhoto(message, null, 0, 0, 0, provider);

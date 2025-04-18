@@ -24,6 +24,8 @@ import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.Theme;
 
+import ru.dahl.messenger.settings.DahlSettings;
+
 public class SenderSelectView extends View {
     private final static float SPRING_MULTIPLIER = 100f;
     private final static FloatPropertyCompat<SenderSelectView> MENU_PROGRESS = new SimpleFloatPropertyCompat<SenderSelectView>("menuProgress", obj -> obj.menuProgress, (obj, value) -> {
@@ -45,7 +47,7 @@ public class SenderSelectView extends View {
 
     public SenderSelectView(Context context) {
         super(context);
-        avatarImage.setRoundRadius(AndroidUtilities.dp(28));
+        avatarImage.setRoundRadius(DahlSettings.INSTANCE.getAvatarCornerRadius());
         menuPaint.setStrokeWidth(AndroidUtilities.dp(2));
         menuPaint.setStrokeCap(Paint.Cap.ROUND);
         menuPaint.setStyle(Paint.Style.STROKE);

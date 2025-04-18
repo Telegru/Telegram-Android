@@ -130,8 +130,8 @@
             android:enabled="false"
             android:name="org.telegram.messenger.VintageIcon"
             android:targetActivity="org.telegram.ui.LaunchActivity"
-            android:icon="@mipmap/icon_6_launcher"
-            android:roundIcon="@mipmap/icon_6_launcher_round"
+            android:icon="@mipmap/ic_launcher_dahl_vintage"
+            android:roundIcon="@mipmap/ic_launcher_dahl_vintage_round"
             android:exported="true">
 
             <intent-filter>
@@ -144,10 +144,10 @@
 
         <activity-alias
             android:enabled="false"
-            android:name="org.telegram.messenger.AquaIcon"
+            android:name="org.telegram.messenger.BlackIcon"
             android:targetActivity="org.telegram.ui.LaunchActivity"
-            android:icon="@mipmap/icon_4_launcher"
-            android:roundIcon="@mipmap/icon_4_launcher_round"
+            android:icon="@mipmap/ic_launcher_dahl_black"
+            android:roundIcon="@mipmap/ic_launcher_dahl_black_round"
             android:exported="true">
 
             <intent-filter>
@@ -160,10 +160,10 @@
 
         <activity-alias
             android:enabled="false"
-            android:name="org.telegram.messenger.PremiumIcon"
+            android:name="org.telegram.messenger.MetallicIcon"
             android:targetActivity="org.telegram.ui.LaunchActivity"
-            android:icon="@mipmap/icon_3_launcher"
-            android:roundIcon="@mipmap/icon_3_launcher_round"
+            android:icon="@mipmap/ic_launcher_dahl_metallic"
+            android:roundIcon="@mipmap/ic_launcher_dahl_metallic_round"
             android:exported="true">
 
             <intent-filter>
@@ -176,10 +176,58 @@
 
         <activity-alias
             android:enabled="false"
-            android:name="org.telegram.messenger.TurboIcon"
+            android:name="org.telegram.messenger.SilverIcon"
             android:targetActivity="org.telegram.ui.LaunchActivity"
-            android:icon="@mipmap/icon_5_launcher"
-            android:roundIcon="@mipmap/icon_5_launcher_round"
+            android:icon="@mipmap/ic_launcher_dahl_silver"
+            android:roundIcon="@mipmap/ic_launcher_dahl_silver_round"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.MULTIWINDOW_LAUNCHER" />
+            </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
+        </activity-alias>
+
+        <activity-alias
+            android:enabled="false"
+            android:name="org.telegram.messenger.InvertedIcon"
+            android:targetActivity="org.telegram.ui.LaunchActivity"
+            android:icon="@mipmap/ic_launcher_dahl_inverted"
+            android:roundIcon="@mipmap/ic_launcher_dahl_inverted_round"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.MULTIWINDOW_LAUNCHER" />
+            </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
+        </activity-alias>
+
+        <activity-alias
+            android:enabled="false"
+            android:name="org.telegram.messenger.WhiteIcon"
+            android:targetActivity="org.telegram.ui.LaunchActivity"
+            android:icon="@mipmap/ic_launcher_dahl_white"
+            android:roundIcon="@mipmap/ic_launcher_dahl_white_round"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.MULTIWINDOW_LAUNCHER" />
+            </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
+        </activity-alias>
+
+        <activity-alias
+            android:enabled="false"
+            android:name="org.telegram.messenger.UnicornIcon"
+            android:targetActivity="org.telegram.ui.LaunchActivity"
+            android:icon="@mipmap/ic_launcher_dahl_unicorn"
+            android:roundIcon="@mipmap/ic_launcher_dahl_unicorn_round"
             android:exported="true">
 
             <intent-filter>
@@ -194,8 +242,136 @@
             android:enabled="false"
             android:name="org.telegram.messenger.NoxIcon"
             android:targetActivity="org.telegram.ui.LaunchActivity"
-            android:icon="@mipmap/icon_2_launcher"
-            android:roundIcon="@mipmap/icon_2_launcher_round"
+            android:icon="@mipmap/ic_launcher_dahl_night"
+            android:roundIcon="@mipmap/ic_launcher_dahl_night_round"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.MULTIWINDOW_LAUNCHER" />
+            </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
+        </activity-alias>
+
+        <activity-alias
+            android:enabled="false"
+            android:name="org.telegram.messenger.OutlineIcon"
+            android:targetActivity="org.telegram.ui.LaunchActivity"
+            android:icon="@mipmap/ic_launcher_dahl_outline"
+            android:roundIcon="@mipmap/ic_launcher_dahl_outline_round"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.MULTIWINDOW_LAUNCHER" />
+            </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
+        </activity-alias>
+
+        <activity-alias
+            android:enabled="false"
+            android:name="org.telegram.messenger.TitaniumIcon"
+            android:targetActivity="org.telegram.ui.LaunchActivity"
+            android:icon="@mipmap/ic_launcher_dahl_titanium"
+            android:roundIcon="@mipmap/ic_launcher_dahl_titanium_round"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.MULTIWINDOW_LAUNCHER" />
+            </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
+        </activity-alias>
+
+        <activity-alias
+            android:enabled="false"
+            android:name="org.telegram.messenger.SparklingIcon"
+            android:targetActivity="org.telegram.ui.LaunchActivity"
+            android:icon="@mipmap/ic_launcher_dahl_sparkling"
+            android:roundIcon="@mipmap/ic_launcher_dahl_sparkling_round"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.MULTIWINDOW_LAUNCHER" />
+            </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
+        </activity-alias>
+
+        <activity-alias
+            android:enabled="false"
+            android:name="org.telegram.messenger.RussiaIcon"
+            android:targetActivity="org.telegram.ui.LaunchActivity"
+            android:icon="@mipmap/ic_launcher_dahl_russia"
+            android:roundIcon="@mipmap/ic_launcher_dahl_russia_round"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.MULTIWINDOW_LAUNCHER" />
+            </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
+        </activity-alias>
+
+        <activity-alias
+            android:enabled="false"
+            android:name="org.telegram.messenger.TriangleIcon"
+            android:targetActivity="org.telegram.ui.LaunchActivity"
+            android:icon="@mipmap/ic_launcher_dahl_triangle"
+            android:roundIcon="@mipmap/ic_launcher_dahl_triangle_round"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.MULTIWINDOW_LAUNCHER" />
+            </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
+        </activity-alias>
+
+        <activity-alias
+            android:enabled="false"
+            android:name="org.telegram.messenger.TatarstanIcon"
+            android:targetActivity="org.telegram.ui.LaunchActivity"
+            android:icon="@mipmap/ic_launcher_dahl_tatarstan"
+            android:roundIcon="@mipmap/ic_launcher_dahl_tatarstan_round"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.MULTIWINDOW_LAUNCHER" />
+            </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
+        </activity-alias>
+
+        <activity-alias
+            android:enabled="false"
+            android:name="org.telegram.messenger.BirchIcon"
+            android:targetActivity="org.telegram.ui.LaunchActivity"
+            android:icon="@mipmap/ic_launcher_dahl_birch"
+            android:roundIcon="@mipmap/ic_launcher_dahl_birch_round"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.MULTIWINDOW_LAUNCHER" />
+            </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
+        </activity-alias>
+
+        <activity-alias
+            android:enabled="false"
+            android:name="org.telegram.messenger.WinterIcon"
+            android:targetActivity="org.telegram.ui.LaunchActivity"
+            android:icon="@mipmap/ic_launcher_dahl_winter"
+            android:roundIcon="@mipmap/ic_launcher_dahl_winter_round"
             android:exported="true">
 
             <intent-filter>
@@ -250,7 +426,7 @@
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
-                <data android:mimeType="vnd.android.cursor.item/vnd.org.telegram.messenger.android.profile"/>
+                <data android:mimeType="vnd.android.cursor.item/vnd.ru.tusco.messenger.android.profile"/>
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
@@ -294,8 +470,8 @@
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
-                <data android:mimeType="vnd.android.cursor.item/vnd.org.telegram.messenger.android.call"/>
-                <data android:mimeType="vnd.android.cursor.item/vnd.org.telegram.messenger.android.call.video"/>
+                <data android:mimeType="vnd.android.cursor.item/vnd.ru.tusco.messenger.android.call"/>
+                <data android:mimeType="vnd.android.cursor.item/vnd.ru.tusco.messenger.android.call.video"/>
             </intent-filter>
         </activity-alias>
         <activity
@@ -402,6 +578,14 @@
         </receiver>
 
         <receiver
+            android:name=".CopyCodeReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="org.telegram.messenger.ACTION_COPY_CODE"/>
+            </intent-filter>
+        </receiver>
+
+        <receiver
             android:name=".NotificationsDisabledReceiver"
             android:exported="false">
             <intent-filter>
@@ -412,7 +596,7 @@
         <receiver
             android:name=".AutoMessageReplyReceiver"
             android:exported="false">
-e            <intent-filter>
+            <intent-filter>
                 <action android:name="org.telegram.messenger.ACTION_MESSAGE_REPLY"/>
             </intent-filter>
         </receiver>
@@ -582,6 +766,8 @@ e            <intent-filter>
 
         <receiver android:name=".voip.VoIPActionsReceiver" android:exported="false"/>
 
+        <receiver android:name=".ShortcutResultReceiver" android:exported="false"/>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"
@@ -657,7 +843,7 @@ e            <intent-filter>
         <meta-data android:name="com.sec.android.multiwindow.MINIMUM_SIZE_W" android:value="632dp" />
         <meta-data android:name="com.sec.android.multiwindow.MINIMUM_SIZE_H" android:value="598dp" />
 
-        <meta-data android:name="com.google.android.gms.wallet.api.enabled" android:value="true" />
+        <meta-data android:name="com.google.android.gms.wallet.api.enabled" android:value="false" />
 
         <meta-data android:name="com.google.android.gms.car.notification.SmallIcon" android:resource="@drawable/ic_player" />
         <meta-data android:name="com.google.android.gms.car.application" android:resource="@xml/automotive_app_desc" />
@@ -665,6 +851,9 @@ e            <intent-filter>
         <meta-data android:name="com.google.android.gms.vision.DEPENDENCIES" android:value="face,barcode" />
 
         <meta-data android:name="android.max_aspect" android:value="2.5" />
+        <meta-data
+            android:name="com.google.android.gms.cast.framework.OPTIONS_PROVIDER_CLASS_NAME"
+            android:value="org.telegram.messenger.chromecast.ChromecastOptionsProvider" />
 
     </application>
 

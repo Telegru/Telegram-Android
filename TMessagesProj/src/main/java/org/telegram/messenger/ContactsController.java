@@ -31,12 +31,13 @@ import android.util.SparseArray;
 import androidx.annotation.NonNull;
 import androidx.collection.LongSparseArray;
 
-import com.google.android.exoplayer2.util.Log;
-
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.tgnet.Vector;
+import org.telegram.tgnet.tl.TL_account;
+import org.telegram.tgnet.tl.TL_stars;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.Components.Bulletin;
 
@@ -84,6 +85,8 @@ public class ContactsController extends BaseController {
     private ArrayList<TLRPC.PrivacyRule> addedByPhonePrivacyRules;
     private ArrayList<TLRPC.PrivacyRule> voiceMessagesRules;
     private ArrayList<TLRPC.PrivacyRule> birthdayPrivacyRules;
+    private ArrayList<TLRPC.PrivacyRule> giftsPrivacyRules;
+    private ArrayList<TLRPC.PrivacyRule> noPaidMessagesPrivacyRules;
     private TLRPC.TL_globalPrivacySettings globalPrivacySettings;
 
     public final static int PRIVACY_RULES_TYPE_LASTSEEN = 0;
@@ -98,8 +101,10 @@ public class ContactsController extends BaseController {
     public final static int PRIVACY_RULES_TYPE_BIO = 9;
     public final static int PRIVACY_RULES_TYPE_MESSAGES = 10;
     public final static int PRIVACY_RULES_TYPE_BIRTHDAY = 11;
+    public final static int PRIVACY_RULES_TYPE_GIFTS = 12;
+    public final static int PRIVACY_RULES_TYPE_NO_PAID_MESSAGES = 13;
 
-    public final static int PRIVACY_RULES_TYPE_COUNT = 12;
+    public final static int PRIVACY_RULES_TYPE_COUNT = 14;
 
     private class MyContentObserver extends ContentObserver {
 
@@ -331,6 +336,7 @@ public class ContactsController extends BaseController {
         profilePhotoPrivacyRules = null;
         bioPrivacyRules = null;
         birthdayPrivacyRules = null;
+        giftsPrivacyRules = null;
         forwardsPrivacyRules = null;
         phonePrivacyRules = null;
 
@@ -2582,10 +2588,10 @@ public class ContactsController extends BaseController {
         editor.putBoolean("needGetStatuses", true).commit();
         TLRPC.TL_contacts_getStatuses req = new TLRPC.TL_contacts_getStatuses();
         getConnectionsManager().sendRequest(req, (response, error) -> {
-            if (error == null) {
+            if (response instanceof Vector) {
                 AndroidUtilities.runOnUIThread(() -> {
                     editor.remove("needGetStatuses").commit();
-                    TLRPC.Vector vector = (TLRPC.Vector) response;
+                    Vector vector = (Vector) response;
                     if (!vector.objects.isEmpty()) {
                         ArrayList<TLRPC.User> dbUsersStatus = new ArrayList<>();
                         for (Object object : vector.objects) {
@@ -2621,7 +2627,7 @@ public class ContactsController extends BaseController {
     public void loadGlobalPrivacySetting() {
         if (loadingGlobalSettings == 0) {
             loadingGlobalSettings = 1;
-            TLRPC.TL_account_getGlobalPrivacySettings req = new TLRPC.TL_account_getGlobalPrivacySettings();
+            TL_account.getGlobalPrivacySettings req = new TL_account.getGlobalPrivacySettings();
             getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
                 if (error == null) {
                     globalPrivacySettings = (TLRPC.TL_globalPrivacySettings) response;
@@ -2635,9 +2641,12 @@ public class ContactsController extends BaseController {
     }
 
     public void loadPrivacySettings() {
+        loadPrivacySettings(false);
+    }
+    public void loadPrivacySettings(boolean force) {
         if (loadingDeleteInfo == 0) {
             loadingDeleteInfo = 1;
-            TLRPC.TL_account_getAccountTTL req = new TLRPC.TL_account_getAccountTTL();
+            TL_account.getAccountTTL req = new TL_account.getAccountTTL();
             getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
                 if (error == null) {
                     TLRPC.TL_accountDaysTTL ttl = (TLRPC.TL_accountDaysTTL) response;
@@ -2651,13 +2660,13 @@ public class ContactsController extends BaseController {
         }
         loadGlobalPrivacySetting();
         for (int a = 0; a < loadingPrivacyInfo.length; a++) {
-            if (loadingPrivacyInfo[a] != 0) {
+            if (force ? loadingPrivacyInfo[a] == 1 : loadingPrivacyInfo[a] != 0) {
                 continue;
             }
             loadingPrivacyInfo[a] = 1;
             final int num = a;
 
-            TLRPC.TL_account_getPrivacy req = new TLRPC.TL_account_getPrivacy();
+            TL_account.getPrivacy req = new TL_account.getPrivacy();
 
             switch (num) {
                 case PRIVACY_RULES_TYPE_LASTSEEN:
@@ -2690,6 +2699,12 @@ public class ContactsController extends BaseController {
                 case PRIVACY_RULES_TYPE_BIRTHDAY:
                     req.key = new TLRPC.TL_inputPrivacyKeyBirthday();
                     break;
+                case PRIVACY_RULES_TYPE_GIFTS:
+                    req.key = new TLRPC.TL_inputPrivacyKeyStarGiftsAutoSave();
+                    break;
+                case PRIVACY_RULES_TYPE_NO_PAID_MESSAGES:
+                    req.key = new TLRPC.TL_inputPrivacyKeyNoPaidMessages();
+                    break;
                 case PRIVACY_RULES_TYPE_ADDED_BY_PHONE:
                     req.key = new TLRPC.TL_inputPrivacyKeyAddedByPhone();
                     break;
@@ -2699,7 +2714,7 @@ public class ContactsController extends BaseController {
 
             getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
                 if (error == null) {
-                    TLRPC.TL_account_privacyRules rules = (TLRPC.TL_account_privacyRules) response;
+                    TL_account.privacyRules rules = (TL_account.privacyRules) response;
                     getMessagesController().putUsers(rules.users, false);
                     getMessagesController().putChats(rules.chats, false);
 
@@ -2724,6 +2739,12 @@ public class ContactsController extends BaseController {
                             break;
                         case PRIVACY_RULES_TYPE_BIRTHDAY:
                             birthdayPrivacyRules = rules.rules;
+                            break;
+                        case PRIVACY_RULES_TYPE_GIFTS:
+                            giftsPrivacyRules = rules.rules;
+                            break;
+                        case PRIVACY_RULES_TYPE_NO_PAID_MESSAGES:
+                            noPaidMessagesPrivacyRules = rules.rules;
                             break;
                         case PRIVACY_RULES_TYPE_FORWARDS:
                             forwardsPrivacyRules = rules.rules;
@@ -2789,6 +2810,10 @@ public class ContactsController extends BaseController {
                 return bioPrivacyRules;
             case PRIVACY_RULES_TYPE_BIRTHDAY:
                 return birthdayPrivacyRules;
+            case PRIVACY_RULES_TYPE_GIFTS:
+                return giftsPrivacyRules;
+            case PRIVACY_RULES_TYPE_NO_PAID_MESSAGES:
+                return noPaidMessagesPrivacyRules;
             case PRIVACY_RULES_TYPE_FORWARDS:
                 return forwardsPrivacyRules;
             case PRIVACY_RULES_TYPE_PHONE:
@@ -2823,6 +2848,12 @@ public class ContactsController extends BaseController {
                 break;
             case PRIVACY_RULES_TYPE_BIRTHDAY:
                 birthdayPrivacyRules = rules;
+                break;
+            case PRIVACY_RULES_TYPE_GIFTS:
+                giftsPrivacyRules = rules;
+                break;
+            case PRIVACY_RULES_TYPE_NO_PAID_MESSAGES:
+                noPaidMessagesPrivacyRules = rules;
                 break;
             case PRIVACY_RULES_TYPE_FORWARDS:
                 forwardsPrivacyRules = rules;
@@ -3060,5 +3091,18 @@ public class ContactsController extends BaseController {
         String lookup_key;
         String name;
         String phone;
+    }
+
+
+    public static <T extends TLRPC.PrivacyRule> T findRule(ArrayList<TLRPC.PrivacyRule> rules, Class<T> clazz) {
+        if (rules == null) {
+            return null;
+        }
+        for (TLRPC.PrivacyRule rule : rules) {
+            if (clazz.isInstance(rule)) {
+                return clazz.cast(rule);
+            }
+        }
+        return null;
     }
 }

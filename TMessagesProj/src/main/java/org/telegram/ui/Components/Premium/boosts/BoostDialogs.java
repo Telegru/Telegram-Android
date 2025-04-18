@@ -93,8 +93,7 @@ public class BoostDialogs {
             ).show();
             try {
                 containerLayout.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
-            } catch (Exception ignore) {
-            }
+            } catch (Exception ignore) {}
         } else {
             BoostDialogs.showToastError(containerLayout.getContext(), error);
         }
@@ -313,9 +312,7 @@ public class BoostDialogs {
         final NumberPicker.OnValueChangeListener onValueChangeListener = (picker, oldVal, newVal) -> {
             try {
                 container.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
-            } catch (Exception ignore) {
-
-            }
+            } catch (Exception ignore) {}
             if (picker.getTag() != null && (picker.getTag().equals("DAY"))) {
                 if (picker.getValue() == picker.getMinValue()) {
                     Calendar calendarCurrent = Calendar.getInstance();
@@ -591,7 +588,7 @@ public class BoostDialogs {
         SpannableStringBuilder stringBuilder = new SpannableStringBuilder();
 
         if (isStars) {
-            stringBuilder.append(replaceTags(formatPluralString(isChannel ? "BoostingStarsGiveawayHowItWorksTextEnd" : "BoostingStarsGiveawayHowItWorksTextEndGroup", (int) giveaway.stars, from)));
+            stringBuilder.append(replaceTags(formatPluralStringComma(isChannel ? "BoostingStarsGiveawayHowItWorksTextEnd" : "BoostingStarsGiveawayHowItWorksTextEndGroup", (int) giveaway.stars, from)));
         } else {
             stringBuilder.append(replaceTags(formatPluralString(isChannel ? "BoostingGiveawayHowItWorksTextEnd" : "BoostingGiveawayHowItWorksTextEndGroup", quantity, from, quantity, months)));
         }

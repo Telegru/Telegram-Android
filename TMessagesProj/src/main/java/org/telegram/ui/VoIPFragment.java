@@ -15,7 +15,6 @@ import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.KeyguardManager;
-import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -77,7 +76,6 @@ import org.telegram.messenger.Utilities;
 import org.telegram.messenger.voip.EncryptionKeyEmojifier;
 import org.telegram.messenger.voip.Instance;
 import org.telegram.messenger.voip.VideoCapturerDevice;
-import org.telegram.messenger.voip.VoIPPreNotificationService;
 import org.telegram.messenger.voip.VoIPService;
 import org.telegram.messenger.voip.VoIPServiceState;
 import org.telegram.messenger.voip.VoipAudioManager;
@@ -981,7 +979,7 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
         callingUserTitle = new TextView(context);
         callingUserTitle.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 28);
         CharSequence name = ContactsController.formatName(callingUser.first_name, callingUser.last_name);
-        name = Emoji.replaceEmoji(name, callingUserTitle.getPaint().getFontMetricsInt(), AndroidUtilities.dp(20), false);
+        name = Emoji.replaceEmoji(name, callingUserTitle.getPaint().getFontMetricsInt(), false);
         callingUserTitle.setText(name);
         callingUserTitle.setMaxLines(2);
         callingUserTitle.setEllipsize(TextUtils.TruncateAt.END);
@@ -2600,12 +2598,7 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
                 hideUiRunnableWaiting = false;
                 final boolean micMute = !serviceInstance.isMicMute();
                 if (accessibilityManager.isTouchExplorationEnabled()) {
-                    final String text;
-                    if (micMute) {
-                        text = LocaleController.getString(R.string.AccDescrVoipMicOff);
-                    } else {
-                        text = LocaleController.getString(R.string.AccDescrVoipMicOn);
-                    }
+                    final String text = LocaleController.getString(micMute ? R.string.AccDescrVoipMicOff : R.string.AccDescrVoipMicOn);
                     view.announceForAccessibility(text);
                 }
                 serviceInstance.setMicMute(micMute, false, true);
